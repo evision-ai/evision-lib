@@ -1,5 +1,5 @@
 """
-Entrypoint module, in case you use `python -mevision_lib`.
+Entrypoint module, in case you use `python -m evision_lib`.
 
 
 Why does this file exist, and why __main__? For more info, read:
