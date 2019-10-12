@@ -31,7 +31,7 @@ setup(
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
         re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
     ),
-    author='eVision Python Library',
+    author='eVision.AI',
     author_email='lib@evision.ai',
     url='https://github.com/evision-ai/evision-lib',
     packages=find_namespace_packages('src', include=['evision.*']),
@@ -69,14 +69,17 @@ setup(
     ],
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
     install_requires=[
+        'opencv-python',
+        'numpy>=1.11.0',
         'fields'  # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],
     extras_require={
         'tornado': [
             'tornado>=5.0.0',
-            'opencv-python',
             'webargs>=5.5.1',
-            'numpy>=1.11.0',
+        ],
+        'db': [
+            'peewee>= 3.0.0',
         ],
         'rst': [
             'docutils>=0.11',
