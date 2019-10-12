@@ -26,7 +26,6 @@ def read(*names, **kwargs):
 setup(
     name='evision-lib',
     version='0.1.0',
-    license='Apache-2.0',
     description='eVision Common Python Library',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
@@ -48,7 +47,6 @@ setup(
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -80,14 +78,13 @@ setup(
             'webargs>=5.5.1',
             'numpy>=1.11.0',
         ],
-        'rst': ['docutils>=0.11', ],
+        'rst': [
+            'docutils>=0.11',
+        ],
     },
     setup_requires=[
         'pytest-runner',
     ],
     entry_points={
-        'console_scripts': [
-            'evision-lib = evision.lib.cli:main',
-        ]
     },
 )
