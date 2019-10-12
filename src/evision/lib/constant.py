@@ -21,6 +21,7 @@ class Keys(object):
 
     ID = 'id'
     NAME = 'name'
+    PROPERTIES = 'properties'
     URL = 'url'
 
     WIDTH = 'width'

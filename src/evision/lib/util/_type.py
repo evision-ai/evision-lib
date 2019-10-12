@@ -10,7 +10,7 @@
 
 class TypeUtil(object):
     @staticmethod
-    def is_subclass(class_, super_class):
+    def is_subclass(class_: type, super_class):
         """判断 obj 是否是 cls 的子类"""
         if not class_:
             return False
