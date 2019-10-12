@@ -13,7 +13,7 @@ import threading
 from configparser import ConfigParser
 from os import path as osp
 
-from evision.lib.decorators import Singleton
+from evision.lib.decorator import Singleton
 
 
 class ConfigSection(object):

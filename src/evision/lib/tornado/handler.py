@@ -10,7 +10,7 @@ import tornado.web
 from webargs import ValidationError
 from webargs.tornadoparser import HTTPError
 
-from evision.lib.constants import Message, Status
+from evision.lib.constant import Message, Status
 from evision.lib.log import LogHandlers
 from evision.lib.log import logutil
 
