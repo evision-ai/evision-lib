@@ -18,10 +18,7 @@ class TypeUtil(object):
             class_ = type(class_)
         if class_ is super_class:
             return True
-        return any(super_class == base
-                   or isinstance(base, super_class)
-                   or TypeUtil.is_subclass(base, super_class)
-                   for base in class_.__bases__)
+        return issubclass(class_, super_class)
 
     @staticmethod
     def list_subclasses(class_, recursive=True, include_self=True):
