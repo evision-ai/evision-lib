@@ -3,4 +3,5 @@ requires = [
     "setuptools>=30.3.0",
     "wheel",
     "pytest-runner",
+    "fields"
 ]
