@@ -9,3 +9,4 @@
 
 from ._cache_util import CacheUtil
 from ._path_util import PathUtil
+from ._type import TypeUtil
