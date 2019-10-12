@@ -18,17 +18,15 @@ Overview
     :target: https://readthedocs.org/projects/evision-lib
     :alt: Documentation Status
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/dectinc/evision-lib/v0.1.0.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/evision-ai/evision-lib/v0.1.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/dectinc/evision-lib/compare/v0.1.0...master
+    :target: https://github.com/evision-ai/evision-lib/compare/v0.1.0...master
 
 
 
 .. end-badges
 
 eVision Common Python Library
-
-* Free software: Apache Software License 2.0
 
 Installation
 ============
@@ -39,7 +37,7 @@ Installation
 
 You can also install the in-development version with::
 
-    pip install https://github.com/dectinc/evision-lib/archive/master.zip
+    pip install https://github.com/evision-ai/evision-lib/archive/master.zip
 
 
 Documentation

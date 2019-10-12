@@ -23,7 +23,7 @@ if os.getenv('SPELLCHECK'):
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'evision-lib'
-year = '2019'
+year = '2018-2019'
 author = 'eVision Python Library'
 copyright = '{0}, {1}'.format(year, author)
 version = release = '0.1.0'
@@ -31,14 +31,14 @@ version = release = '0.1.0'
 pygments_style = 'trac'
 templates_path = ['.']
 extlinks = {
-    'issue': ('https://github.com/dectinc/evision-lib/issues/%s', '#'),
-    'pr': ('https://github.com/dectinc/evision-lib/pull/%s', 'PR #'),
+    'issue': ('https://github.com/evision-ai/evision-lib/issues/%s', '#'),
+    'pr': ('https://github.com/evision-ai/evision-lib/pull/%s', 'PR #'),
 }
 import sphinx_py3doc_enhanced_theme
 html_theme = "sphinx_py3doc_enhanced_theme"
 html_theme_path = [sphinx_py3doc_enhanced_theme.get_html_theme_path()]
 html_theme_options = {
-    'githuburl': 'https://github.com/dectinc/evision-lib/'
+    'githuburl': 'https://github.com/evision-ai/evision-lib/'
 }
 
 html_use_smartypants = True
