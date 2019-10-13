@@ -22,6 +22,28 @@ from evision.lib.util import CacheUtil
 logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
 
 
+class VideoSourceUtil(object):
+    DEFAULT_TYPE = VideoSourceType.IP_CAMERA
+
+    @classmethod
+    def parse_video_source(cls, source_, type_):
+        """根据来源和来源类型获取视频源信息"""
+        # video source setting
+        if type_ is None:
+            type_ = cls.DEFAULT_TYPE
+        elif isinstance(type_, int):
+            type_ = VideoSourceType(type_)
+        elif not isinstance(type_, VideoSourceType):
+            raise ValueError('Invalid video source type={}'.format(type_))
+
+        if VideoSourceType.USB_CAMERA.equals(type_) \
+            and not isinstance(source_, int):
+            source_ = int(source_)
+
+        logger.info('Video source=[{}], type=[{}]', source_, type_)
+        return source_, type_
+
+
 class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     """ Video Source Base
 
@@ -66,7 +88,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
         self.set_zone_info(zone_start_x, zone_start_y, zone_width, zone_height)
 
         # 视频源地址及类型
-        self.source, self.type = self.parse_video_source(source, type)
+        self.source, self.type = VideoSourceUtil.parse_video_source(source, type)
         self._frame_queue = Queue(frame_queue_size)
 
         # 视频源名称等信息
@@ -245,24 +267,6 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     def random_frame_id(self):
         """ 生成随机图像帧ID"""
         return '{}-{:d}'.format(self.camera_name, int(time.time()))
-
-    @classmethod
-    def parse_video_source(cls, source_, type_):
-        """根据来源和来源类型获取视频源信息"""
-        # video source setting
-        if type_ is None:
-            type_ = cls.DEFAULT_TYPE
-        elif isinstance(type_, int):
-            type_ = VideoSourceType(type_)
-        elif not isinstance(type_, VideoSourceType):
-            raise ValueError('Invalid video source type={}'.format(type_))
-
-        if VideoSourceType.USB_CAMERA.equals(type_) \
-            and not isinstance(source_, int):
-            source_ = int(source_)
-
-        logger.info('Video source=[{}], type=[{}]', source_, type_)
-        return source_, type_
 
     @staticmethod
     def compose_type_and_source(source, type):

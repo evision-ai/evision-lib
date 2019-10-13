@@ -15,7 +15,7 @@ import cv2
 
 from evision.lib.constant import VideoSourceType
 from evision.lib.log import LogHandlers, logutil
-from ._video_source import BaseVideoSource
+from ._video_source import BaseVideoSource, VideoSourceUtil
 
 logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
 
@@ -80,7 +80,7 @@ class VideoCaptureSource(BaseVideoSource):
                                camera_type=VideoSourceType.IP_CAMERA,
                                release=True):
         """验证VideoCapture对象是否有效"""
-        camera_source, camera_type = BaseVideoSource.parse_video_source(
+        camera_source, camera_type = VideoSourceUtil.parse_video_source(
             camera_source, camera_type)
         __camera = cv2.VideoCapture(camera_source)
         if not __camera.isOpened():
