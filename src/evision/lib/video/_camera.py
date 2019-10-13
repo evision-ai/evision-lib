@@ -8,10 +8,11 @@
 # @version: 1.0
 #
 import queue
-import time
 from threading import Thread
 
 import cv2
+import numpy as np
+import time
 
 from evision.lib.constant import VideoSourceType
 from evision.lib.log import LogHandlers, logutil
@@ -23,6 +24,23 @@ logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
 class VideoCaptureSource(BaseVideoSource):
     """VideoCapture类型的视频源封装"""
     __camera: cv2.VideoCapture
+
+    def read_frame(self):
+        """从视频源直接获取图像帧"""
+        try:
+            with self._lock:
+                ret, camera_frame = self.__camera.read()
+            if not ret or np.all(camera_frame == 0):
+                self.accumulate_failure_count()
+                self.try_restore(self.__MAX_FAIL_TIMES, self.reload_source)
+                time.sleep(self.frame_interval)
+                return None
+            self.reset_failure_count()
+            return camera_frame
+        except Exception as e:
+            logger.exception('Failed reading from camera={}: {}',
+                             self.__camera, e)
+        return None
 
     def work(self):
         camera_frame = self.read_frame()
@@ -38,7 +56,7 @@ class VideoCaptureSource(BaseVideoSource):
             pass
         self._frame_queue.put_nowait(camera_frame)
 
-    def _init(self):
+    def init(self):
         """创建VideoCapture对象"""
         __camera = self.validate_camera_source(self.source, self.type,
                                                release=False)
@@ -64,16 +82,16 @@ class VideoCaptureSource(BaseVideoSource):
         else:
             self.zoom_ratio = float(self.frame_width) / camera_frame_width
 
-        return __camera
+        self.__camera = __camera
 
-    def update_zoom_ratio(self):
-        if self._camera and self.type and VideoSourceType.USB_CAMERA.equals(self.type):
-            self._camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
-            self._camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
-            self._camera.set(cv2.CAP_PROP_FPS, self.fps)
+    def _update_zoom_ratio(self):
+        if self.__camera and self.type and VideoSourceType.USB_CAMERA.equals(self.type):
+            self.__camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+            self.__camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+            self.__camera.set(cv2.CAP_PROP_FPS, self.fps)
             self.zoom_ratio = 1
         else:
-            super().update_zoom_ratio()
+            super()._update_zoom_ratio()
 
     @staticmethod
     def validate_camera_source(camera_source,
@@ -109,12 +127,18 @@ class VideoCaptureSource(BaseVideoSource):
                 if source_ is None or not source_.isOpened():
                     raise Exception('Failed initialized video source={}'.format(
                         self.source))
-                self._camera.release()
-                self._camera = source_
+                self.__camera.release()
+                self.__camera = source_
             except Exception as e:
                 logger.error('[{}] Failed reloading camera={}: {}',
                              self.id, self.source, e)
         logger.info('Reload video source={}', self.source)
+
+    def stop_reading(self, release=True):
+        self._keep_running = False
+        if release and self.__camera:
+            self.__camera.release()
+            del self.__camera
 
 
 class VideoCapturePreview(Thread):
