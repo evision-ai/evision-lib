@@ -7,11 +7,10 @@
 # @date: 2019-10-12 15:45
 # @version: 1.0
 #
-import time
 from queue import Queue
 from threading import RLock, Thread
 
-import numpy as np
+import time
 
 from evision.lib.constant import Keys, VideoSourceType
 from evision.lib.entity import Zone
@@ -51,18 +50,33 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     """
     type: VideoSourceType
     __MAX_FAIL_TIMES = 100
-    DEFAULT_TYPE = VideoSourceType.IP_CAMERA
     __DEFAULT_FPS = 5
 
     _should_crop_zone: bool
     _should_resize_frame: bool
 
     def __init__(self, width: int = None, height: int = None, fps: int = 5,
-                 source: str = None, type=None,
-                 name=None, description=None,
-                 zone_start_x=None, zone_start_y=None,
-                 zone_width=None, zone_height=None,
-                 frame_queue_size=1, id=None, **kwargs):
+                 source: str = None, type: [VideoSourceType, int] = None,
+                 name: str = None, description: str = None,
+                 zone_start_x: int = None, zone_start_y: int = None,
+                 zone_width: int = None, zone_height: int = None,
+                 frame_queue_size: int = 1, id: str = None, **kwargs):
+        """视频源初始化
+
+        :param width: 视频源宽度
+        :param height: 视频源高度
+        :param fps: 视频源帧率
+        :param source: 视频源地址
+        :param type: 视频源类型
+        :param name: 视频源名称
+        :param description: 视频源描述
+        :param zone_start_x: 指定视频裁剪区域横向开始位置
+        :param zone_start_y: 指定视频裁剪区域纵向开始位置
+        :param zone_width: 指定视频裁剪区域宽度
+        :param zone_height: 指定视频裁剪区域高度
+        :param frame_queue_size: 帧队列长度
+        :param id: 视频源 ID
+        """
         SaveAndLoadConfigMixin.__init__(self)
         FailureCountMixin.__init__(self)
         Thread.__init__(self)
@@ -91,9 +105,9 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
         self.source, self.type = VideoSourceUtil.parse_video_source(source, type)
         self._frame_queue = Queue(frame_queue_size)
 
-        # 视频源名称等信息
+        # 视频源名称等信息，覆盖 Thread 属性
         self.id = id if id else CacheUtil.random_id()
-        self.camera_name = name
+        self.name = name
         self.description = description
 
         self.kwargs = kwargs
@@ -108,7 +122,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
                     self.__class__.__name__, self.id,
                     self.source, self.type,
                     self.frame_size, self.fps,
-                    self.camera_name, self.description, self.zone)
+                    self.name, self.description, self.zone)
 
     def init(self):
         try:
@@ -118,8 +132,8 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
                 logger.info('VideoSource[{}] already inited', self.alias)
             return self._camera
         except Exception as e:
-            logger.exception('Failed initializing camera={}, please check you '
-                             'configuration', e)
+            logger.exception('Failed initializing video source, '
+                             'please check you configuration', e)
             raise e
 
     def _init(self):
@@ -171,10 +185,10 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
             logger.info('[{}] Set detection zone={}', self.alias, self.zone)
 
     def set_name_description(self, name, description):
-        if self.camera_name == name and self.description == description:
+        if self.name == name and self.description == description:
             return
-        if self.camera_name != name:
-            self.camera_name = name
+        if self.name != name:
+            self.name = name
         self.description = description
         if self._camera:
             logger.info('[{}} Set name={}, description={}',
@@ -205,7 +219,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
             Keys.WIDTH: self.frame_width,
             Keys.HEIGHT: self.frame_height,
             Keys.FPS: self.fps,
-            Keys.NAME: self.camera_name,
+            Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description,
         }
         if self.zone is not None:
@@ -227,15 +241,15 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @property
     def alias(self):
-        return self.camera_name if self.camera_name else str(self.source)
+        return self.name if self.name else str(self.source)
 
     @property
-    def camera_info(self):
+    def info(self):
         return {
             Keys.ID: self.id,
             Keys.SOURCE: self.source,
             Keys.TYPE: self.type.value,
-            Keys.NAME: self.camera_name,
+            Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description
         }
 
@@ -266,7 +280,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
     def random_frame_id(self):
         """ 生成随机图像帧ID"""
-        return '{}-{:d}'.format(self.camera_name, int(time.time()))
+        return '{}-{:d}'.format(self.name, int(time.time()))
 
     @staticmethod
     def compose_type_and_source(source, type):
@@ -292,7 +306,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
             #              self.id, 1000.0 * (time.perf_counter() - start))
 
         logger.info("Camera[{}], source={}, type={} stopped",
-                    self.camera_name, self.source, self.type)
+                    self.name, self.source, self.type)
 
     def start_working(self):
         """将服务作为后台服务启动"""
