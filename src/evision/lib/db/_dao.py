@@ -6,12 +6,14 @@
 # @date: 2018-06-12 19:54
 # @version: 1.0
 #
+import ast
 import json
 from datetime import datetime
 
 import peewee
 
 from evision.lib.db import ModelIsNone, ModelOfWrongType
+from evision.lib.decorator import CachedProperty
 from evision.lib.log import LogHandlers, logutil
 
 logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
@@ -23,6 +25,18 @@ def _db_time_convert(info_map):
 
 class BaseModel(peewee.Model):
     """数据库表结构封装"""
+
+    class Meta:
+        database = peewee.Proxy()
+
+    @classmethod
+    def init(cls):
+        cls._meta.database.create_tables([cls, ])
+
+    @CachedProperty
+    def extra_info(self):
+        return ast.literal_eval(self.extras) if getattr(self, 'extras', None) \
+            else {}
 
     def __str__(self):
         try:
