@@ -13,7 +13,7 @@ import peewee
 from evision.lib.db import ModelIsNone, ModelOfWrongType
 from evision.lib.log import LogHandlers, logutil
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 def _db_time_convert(info_map):

@@ -16,7 +16,7 @@ from evision.lib.log import logutil
 from evision.lib.log.logutil import RequestIdContext
 from evision.lib.tornado.response import Response
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 class ImageSourceType(Enum):

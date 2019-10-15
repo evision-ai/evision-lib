@@ -18,7 +18,7 @@ from evision.lib.log import LogHandlers, logutil
 from evision.lib.mixin import FailureCountMixin, SaveAndLoadConfigMixin
 from evision.lib.util import CacheUtil
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 class VideoSourceUtil(object):

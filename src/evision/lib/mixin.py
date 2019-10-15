@@ -19,7 +19,7 @@ from evision.lib.error import PropertiesNotProvided
 from evision.lib.log import LogHandlers, logutil
 from evision.lib.util import TypeUtil
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 class SaveAndLoadConfigMixin(object):

@@ -10,6 +10,8 @@ from logging import Logger
 from tornado import gen
 from tornado.stack_context import StackContext, run_with_stack_context
 
+from evision.lib.log.logconfig import Loggers
+
 
 class BraceMessage(object):
     def __init__(self, fmt, args, kwargs):
@@ -39,7 +41,7 @@ class StyleAdapter(logging.LoggerAdapter):
                      for key in getfullargspec(self.logger._log).args[1:] if key in kwargs}
 
 
-def get_logger(logger_name='api'):
+def get_logger(logger_name=Loggers.DEFAULT):
     if logger_name not in Logger.manager.loggerDict:
         return StyleAdapter(logging.getLogger())
     return StyleAdapter(logging.getLogger(logger_name))

@@ -8,14 +8,15 @@ import logging.handlers
 import os.path as osp
 
 from tornado.log import LogFormatter as TornadoLogFormatter
+
 from . import dictconfig
 
 
-class LogHandlers:
+class LogHandlers(object):
     def __init__(self):
         pass
 
-    SERVICE_DEFAULT = 'default'
+    DEFAULT = 'default'
     TEST_DEFAULT = 'test_default'
     EXP_DEFAULT = 'exp_default'
     FILE = 'file'
@@ -23,11 +24,13 @@ class LogHandlers:
     NULL = 'null'
 
 
-class Loggers:
+class Loggers(object):
     def __init__(self):
         pass
 
-    SERVICE_DEFAULT = LogHandlers.SERVICE_DEFAULT
+    DEFAULT = LogHandlers.DEFAULT
+    TEST_DEFAULT = LogHandlers.TEST_DEFAULT
+    CONSOLE = LogHandlers.CONSOLE
     UTIL = 'util'
 
 
@@ -60,7 +63,7 @@ class NullHandler(logging.Handler):
 def initialize_logging(syslog_tag, syslog_facility, loggers,
                        log_level=logging.INFO, use_syslog=False,
                        log_dir=None, log_file=None, show_console=False):
-    if not osp.exists(log_dir):
+    if log_dir and not osp.exists(log_dir):
         import os
 
         os.makedirs(log_dir)
@@ -74,12 +77,27 @@ def initialize_logging(syslog_tag, syslog_facility, loggers,
         if extra is not None:
             name += '_' + str(extra)
         name += '.log'
-        return osp.join(log_dir, name)
+        return osp.join(log_dir, name) if log_dir else name
+
+    def handler_config(name, extra=None):
+        if not log_dir:
+            return {
+                '()': logging.StreamHandler,
+                'formatter': 'tornado'
+            }
+        return {
+            '()': logging.handlers.TimedRotatingFileHandler,
+            'level': 'INFO',
+            'when': 'midnight',
+            'backupCount': 30,
+            'formatter': 'tornado',
+            'filename': get_log_file(name, extra)
+        }
 
     base_fmt = '[{levelname} {asctime}.{msecs:.03d} {filename}s:{lineno} - {funcName}] {message}'
-    base_handlers = [LogHandlers.CONSOLE, LogHandlers.SERVICE_DEFAULT] \
+    base_handlers = [LogHandlers.CONSOLE, LogHandlers.DEFAULT] \
         if show_console \
-        else [LogHandlers.SERVICE_DEFAULT]
+        else [LogHandlers.DEFAULT]
 
     cfg = {
         'version': 1,
@@ -104,46 +122,24 @@ def initialize_logging(syslog_tag, syslog_facility, loggers,
             },
         },
         'handlers': {
-            LogHandlers.SERVICE_DEFAULT: {
-                '()': logging.handlers.TimedRotatingFileHandler,
-                'level': 'INFO',
-                'when': 'midnight',
-                'backupCount': 30,
-                'formatter': 'tornado',
-                'filename': get_log_file(LogHandlers.SERVICE_DEFAULT)
+            LogHandlers.NULL: {
+                '()': NullHandler,
             },
             LogHandlers.CONSOLE: {
                 '()': logging.StreamHandler,
                 'formatter': 'tornado'
             },
-            LogHandlers.NULL: {
-                '()': NullHandler,
-            },
-            'tornado.access': {
-                '()': logging.handlers.TimedRotatingFileHandler,
-                'level': 'INFO',
-                'when': 'midnight',
-                'formatter': 'tornado',
-                'filename': get_log_file('tornado.access')
-            },
-            'tornado.application': {
-                '()': logging.handlers.TimedRotatingFileHandler,
-                'level': 'INFO',
-                'when': 'midnight',
-                'formatter': 'tornado',
-                'filename': get_log_file('tornado.application')
-            },
-            'tornado.general': {
-                '()': logging.handlers.TimedRotatingFileHandler,
-                'level': 'INFO',
-                'when': 'midnight',
-                'formatter': 'tornado',
-                'filename': get_log_file('tornado.general')
-            }
+            LogHandlers.DEFAULT: handler_config(LogHandlers.DEFAULT),
+            'tornado.access': handler_config('tornado.access'),
+            'tornado.application': handler_config('tornado.application'),
+            'tornado.general': handler_config('tornado.general')
         },
         'loggers': {
-            LogHandlers.SERVICE_DEFAULT: {
+            Loggers.DEFAULT: {
                 'handlers': base_handlers
+            },
+            Loggers.CONSOLE: {
+                'handlers': [LogHandlers.CONSOLE, ]
             },
             'tornado.access': {
                 'handlers': ['tornado.access']

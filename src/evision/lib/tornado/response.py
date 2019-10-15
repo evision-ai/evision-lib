@@ -19,7 +19,7 @@ from evision.lib.log import LogHandlers
 from evision.lib.log import logutil
 from evision.lib.log.logutil import RequestIdContext
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 class Response(object):

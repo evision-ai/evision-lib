@@ -18,7 +18,7 @@ from evision.lib.constant import VideoSourceType
 from evision.lib.log import LogHandlers, logutil
 from ._video_source import BaseVideoSource, VideoSourceUtil
 
-logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
+logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
 class VideoCaptureSource(BaseVideoSource):
