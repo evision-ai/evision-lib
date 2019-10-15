@@ -13,6 +13,7 @@ from webargs.tornadoparser import HTTPError
 from evision.lib.constant import Message, Status
 from evision.lib.log import LogHandlers
 from evision.lib.log import logutil
+from evision.lib.log.logutil import RequestIdContext
 
 logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
 
@@ -29,7 +30,6 @@ class ImageSourceType(Enum):
     def equals(self, value):
         return self.value == value
 
-
 class BaseHandler(tornado.web.RequestHandler):
     """A class to collect common handler methods - all other handlers should
     subclass this one.
@@ -42,16 +42,54 @@ class BaseHandler(tornado.web.RequestHandler):
     __allow_origins = [
     ]
 
+    @logutil.with_request_id
+    async def initialize(self):
+        """
+        make the request id context is available
+
+        :return:
+        """
+        pass
+
+    async def prepare(self):
+        """
+
+        before real handler runs
+
+        1. update request id
+
+        :return:
+        """
+        request_id = self.request.headers.get("X-Request-ID")
+        if request_id:
+            RequestIdContext.set(request_id)
+        else:
+            self.set_header("X-Request-ID", RequestIdContext.get())
+
     def set_default_headers(self):
-        origin = self.request.headers.get('Origin')
-        if origin is not None:
-            self.set_header('Access-Control-Allow-Origin', origin)
+        self.set_header("Access-Control-Allow-Origin",
+                        self.request.headers.get("Origin", ""))
+        self.set_header("Access-Control-Allow-Methods",
+                        "POST, GET, PUT, PATCH, DELETE, HEAD, OPTIONS")
+        self.set_header("Pragma", "no-cache")
         self.set_header('Access-Control-Allow-Credentials', 'true')
         self.set_header('Content-Type', 'application/json; charset=UTF-8')
         self.set_header('Access-Control-Allow-Headers',
                         'Content-Type, Access-Control-Allow-Headers, '
                         'Authorization, X-Requested-With, Cache-Control')
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def _set_ssl(self):
+        """
+        设置协议 http 或者 https
+
+        :return:
+        """
+        if self.request.headers.get("Ssl") == "on":
+            self.https = True
+            self.scheme = "https://"
+        else:
+            self.https = False
+            self.scheme = "http://"
 
     def data_received(self, chunk):
         pass
