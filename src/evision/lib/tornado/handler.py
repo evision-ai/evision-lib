@@ -14,6 +14,7 @@ from evision.lib.constant import Message, Status
 from evision.lib.log import LogHandlers
 from evision.lib.log import logutil
 from evision.lib.log.logutil import RequestIdContext
+from evision.lib.tornado.response import Response
 
 logger = logutil.get_logger(LogHandlers.SERVICE_DEFAULT)
 
@@ -29,6 +30,7 @@ class ImageSourceType(Enum):
 
     def equals(self, value):
         return self.value == value
+
 
 class BaseHandler(tornado.web.RequestHandler):
     """A class to collect common handler methods - all other handlers should
@@ -108,7 +110,7 @@ class BaseHandler(tornado.web.RequestHandler):
             logger.debug(msg)
             raise tornado.web.HTTPError(400, msg)
 
-    def get_json_argument(self, name, default=None):
+    def get_json_argument(self, name: str, default=None):
         """Find and return the argument with key 'name' from JSON request data.
         Similar to Tornado's get_argument() method.
         """
@@ -264,32 +266,6 @@ class BaseHandler(tornado.web.RequestHandler):
         content = np.frombuffer(file['body'], np.uint8)
         image = cv2.imdecode(content, cv2.IMREAD_COLOR)
         return image, filename
-
-
-class Response(object):
-    """请求响应结构"""
-
-    def __init__(self, status=0, message=None, result=None, extras=None):
-        self.status = status
-        self.message = '' if message is None else message
-        if result is not None:
-            self.data = result
-        if extras and isinstance(extras, dict):
-            if not hasattr(self, 'data') or not self.data:
-                self.data = {}
-            self.data.update(extras)
-
-    def to_json(self):
-        # o = bson_util._json_convert(self.__dict__)
-        return tornado.escape.json_encode(self.__dict__)
-        # return json.dumps(json_util._json_convert(self.__dict__),
-        # default=json_util.default)
-        # return json.dumps(self.result['icon'], default=json_util.default)
-        # return json.dumps(self.__dict__, default=json_util.default)
-        # return tornado.escape.json_encode(self.__dict__)
-
-    def __str__(self):
-        return self.to_json()
 
 
 class TestIndexHandler(BaseHandler):
