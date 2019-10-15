@@ -16,7 +16,7 @@ from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.log.logconfig import Loggers
 
-logger = logutil.get_logger(Loggers.SERVICE_DEFAULT)
+logger = logutil.get_logger(Loggers.DEFAULT)
 
 
 class AsyncTest(AsyncTestCase):
