@@ -7,10 +7,9 @@
 # @date: 2019-10-12 15:45
 # @version: 1.0
 #
+import time
 from queue import Queue
 from threading import RLock, Thread
-
-import time
 
 from evision.lib.constant import Keys, VideoSourceType
 from evision.lib.entity import Zone
@@ -59,14 +58,15 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     Denoting a video source, which can produce image frames
     """
     type: VideoSourceType
-    __MAX_FAIL_TIMES = 100
+    _MAX_FAIL_TIMES = 100
     __DEFAULT_FPS = 5
 
     _should_crop_zone: bool
     _should_resize_frame: bool
 
-    def __init__(self, width: int = None, height: int = None, fps: int = 5,
-                 source: str = None, type: [VideoSourceType, int] = None,
+    def __init__(self, source: [str, int] = None,
+                 type: [VideoSourceType, int] = None,
+                 width: int = None, height: int = None, fps: int = 5,
                  name: str = None, description: str = None,
                  zone_start_x: int = None, zone_start_y: int = None,
                  zone_width: int = None, zone_height: int = None,
@@ -93,7 +93,12 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
         # 视频源地址及类型
         self.source, self.type = VideoSourceUtil.parse_video_source(source, type)
+        self.__camera = None
         self._frame_queue = Queue(frame_queue_size)
+
+        self._keep_running = True
+        self._lock = RLock()
+        self.__inited = False
 
         # 需要在初始化视频源信息时更新
         self.original_frame_width = None
@@ -120,10 +125,6 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
         self.kwargs = kwargs
         self.debug = True if kwargs and kwargs.get('debug') else False
-
-        self._keep_running = True
-        self._lock = RLock()
-        self.__inited = False
 
         # 初始化视频源
         self._init()

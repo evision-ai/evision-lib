@@ -16,7 +16,7 @@ import time
 
 from evision.lib.constant import VideoSourceType
 from evision.lib.log import LogHandlers, logutil
-from ._video_source import BaseVideoSource, VideoSourceUtil
+from evision.lib.video import BaseVideoSource, VideoSourceUtil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
@@ -32,7 +32,7 @@ class VideoCaptureSource(BaseVideoSource):
                 ret, camera_frame = self.__camera.read()
             if not ret or np.all(camera_frame == 0):
                 self.accumulate_failure_count()
-                self.try_restore(self.__MAX_FAIL_TIMES, self.reload_source)
+                self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
                 time.sleep(self.frame_interval)
                 return None
             self.reset_failure_count()
@@ -80,7 +80,16 @@ class VideoCaptureSource(BaseVideoSource):
             __camera.set(cv2.CAP_PROP_FPS, self.fps)
             self.zoom_ratio = 1
         else:
-            self.zoom_ratio = float(self.frame_width) / camera_frame_width
+            if self.frame_width:
+                self.zoom_ratio = float(self.frame_width) / camera_frame_width
+                self.frame_height = int(camera_frame_height * self.zoom_ratio)
+            elif self.frame_height:
+                self.zoom_ratio = float(self.frame_height) / camera_frame_height
+                self.frame_width = int(camera_frame_width * self.zoom_ratio)
+            else:
+                self.zoom_ratio = 1
+                self.frame_width = camera_frame_width
+                self.frame_height = camera_frame_height
 
         self.__camera = __camera
 
@@ -171,3 +180,18 @@ class VideoCapturePreview(Thread):
             if cv2.waitKey(200) & 0xFF == ord('q'):
                 cv2.destroyWindow(self.camera.alias)
                 break
+
+
+if __name__ == '__main__':
+    video_file = '~/Downloads/test.avi'
+    import os
+
+    video_source = VideoCaptureSource(source=os.path.expanduser(video_file),
+                                      type=VideoSourceType.VIDEO_FILE, fps=5)
+    video_source.daemon = True
+    video_source.start()
+
+    preview = VideoCapturePreview(video_source)
+    preview.run()
+
+    video_source.stop_reading()
