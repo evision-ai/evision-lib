@@ -54,7 +54,10 @@ class VideoCaptureSource(BaseVideoSource):
                 self._frame_queue.get_nowait()
         except queue.Empty:
             pass
-        self._frame_queue.put_nowait(camera_frame)
+        try:
+            self._frame_queue.put_nowait(camera_frame)
+        except queue.Full:
+            pass
 
     def init(self):
         """创建VideoCapture对象"""
