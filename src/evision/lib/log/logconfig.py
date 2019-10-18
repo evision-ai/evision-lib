@@ -97,7 +97,7 @@ def initialize_logging(syslog_tag, syslog_facility, loggers,
     base_fmt = '[{levelname} {asctime}.{msecs:.03d} {filename}s:{lineno} - {funcName}] {message}'
     base_handlers = [LogHandlers.CONSOLE, LogHandlers.DEFAULT] \
         if show_console \
-        else [LogHandlers.DEFAULT]
+        else [LogHandlers.DEFAULT, ]
 
     cfg = {
         'version': 1,
@@ -172,3 +172,11 @@ def initialize_logging(syslog_tag, syslog_facility, loggers,
     if not cfg:
         return
     dictconfig.dictConfig(cfg)
+
+
+_default_inited = False
+if not _default_inited:
+    initialize_logging('', '', loggers={}, log_level=logging.INFO,
+                       use_syslog=False, log_dir=None, log_file=None,
+                       show_console=False)
+    _default_inited = True
