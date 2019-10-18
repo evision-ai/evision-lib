@@ -7,5 +7,7 @@
 # @date: 2019-10-12 15:44
 # @version: 1.0
 
-from ._image_source import BaseImageProvider
-from ._camera import VideoCaptureSource, VideoCapturePreview
+from .base import ImageSourceType, ImageSourceUtil
+from .camera import VideoCaptureImageSource, VideoCaptureZoomedSource
+from .preview import ImageSourcePreview, VideoCapturePreview
+from .source import BaseImageSource, ZoomImageProvider

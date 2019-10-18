@@ -9,8 +9,6 @@
 #
 from enum import Enum
 
-from fields import Fields
-
 from evision.lib.log import logutil
 
 logger = logutil.get_logger()
@@ -52,8 +50,8 @@ class ImageSourceUtil(object):
     DEFAULT_TYPE = ImageSourceType.IP_CAMERA
 
     @classmethod
-    def parse_video_source(cls, source_, type_):
-        """根据来源和来源类型获取视频源信息"""
+    def parse_source_config(cls, source_, type_):
+        """根据来源和来源类型获取图像源信息"""
         # video source setting
         if type_ is None:
             type_ = cls.DEFAULT_TYPE
