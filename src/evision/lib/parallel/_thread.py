@@ -16,7 +16,7 @@ from ._base import ParallelWrapperMixin
 logger = logutil.get_logger()
 
 
-class ThreadWrapper(Thread, ParallelWrapperMixin):
+class ThreadWrapper(ParallelWrapperMixin, Thread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

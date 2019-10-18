@@ -17,7 +17,7 @@ from ._base import ParallelWrapperMixin
 logger = logutil.get_logger()
 
 
-class ProcessWrapper(Process, ParallelWrapperMixin):
+class ProcessWrapper(ParallelWrapperMixin, Process):
     def __init__(self, name=None, paths=None,
                  answer_sigint=False, answer_sigterm=False,
                  *args, **kwargs):

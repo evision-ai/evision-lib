@@ -56,10 +56,12 @@ class ParallelWrapperMixin(object):
     _running = False
     _ended = False
 
-    def __init__(self, name,                  interval=None,
+    def __init__(self, name, interval=None,
                  show_error=False, fail_on_error=False,
                  exclusive_init_lock=False, **kwargs):
-        self.name = name
+        super().__init__(name=name, **kwargs)
+        if not hasattr(self, 'name'):
+            self.name = name
         self.interval = interval
 
         self.show_error = show_error
