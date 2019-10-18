@@ -9,8 +9,19 @@
 #
 from enum import Enum
 
+from fields import Fields
 
-class VideoSourceType(Enum):
+from evision.lib.log import logutil
+
+logger = logutil.get_logger()
+
+__all__ = [
+    'ImageSourceType',
+    'ImageSourceUtil'
+]
+
+
+class ImageSourceType(Enum):
     """ Identify video source type
     """
     # 网络摄像头
@@ -31,7 +42,39 @@ class VideoSourceType(Enum):
             return False
         elif isinstance(value, int):
             return self.value == value
-        elif isinstance(value, VideoSourceType):
+        elif isinstance(value, ImageSourceType):
             return self.value == value.value
         else:
             return False
+
+
+class ImageSourceUtil(object):
+    DEFAULT_TYPE = ImageSourceType.IP_CAMERA
+
+    @classmethod
+    def parse_video_source(cls, source_, type_):
+        """根据来源和来源类型获取视频源信息"""
+        # video source setting
+        if type_ is None:
+            type_ = cls.DEFAULT_TYPE
+        elif isinstance(type_, int):
+            type_ = ImageSourceType(type_)
+        elif not isinstance(type_, ImageSourceType):
+            raise ValueError('Invalid video source type={}'.format(type_))
+
+        if ImageSourceType.USB_CAMERA.equals(type_) and not isinstance(source_, int):
+            source_ = int(source_)
+
+        logger.info('Video source=[{}], type=[{}]', source_, type_)
+        return source_, type_
+
+    @staticmethod
+    def check_frame_shape(width, height):
+        if not width and not height:
+            raise ValueError('Frame shape not provided')
+        if not width or not height:
+            raise ValueError('Frame width and height should be both or either '
+                             'set, provided=[{}, {}]', width, height)
+        if width < 1 or height < 1:
+            raise ValueError('Invalid camera frame size=[{}, {}]'.format(width, height))
+        return width, height

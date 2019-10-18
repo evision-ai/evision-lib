@@ -8,20 +8,23 @@
 # @version: 1.0
 #
 import queue
+import time
 from threading import Thread
 
 import cv2
 import numpy as np
-import time
 
-from evision.lib.constant import VideoSourceType
 from evision.lib.log import LogHandlers, logutil
-from evision.lib.video import BaseVideoSource, VideoSourceUtil
+from evision.lib.video import BaseImageProvider
+from evision.lib.video.base import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
+class IpCameraSource(BaseImageSource):
+    pass
 
-class VideoCaptureSource(BaseVideoSource):
+
+class VideoCaptureSource(BaseImageProvider):
     """VideoCapture类型的视频源封装"""
     __camera: cv2.VideoCapture
 
@@ -77,7 +80,7 @@ class VideoCaptureSource(BaseVideoSource):
         self.original_fps = camera_fps
 
         # set properties according to camera type
-        if self.type and VideoSourceType.USB_CAMERA.equals(self.type):
+        if self.type and ImageSourceType.USB_CAMERA.equals(self.type):
             __camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             __camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             __camera.set(cv2.CAP_PROP_FPS, self.fps)
@@ -97,7 +100,7 @@ class VideoCaptureSource(BaseVideoSource):
         self.__camera = __camera
 
     def _update_zoom_ratio(self):
-        if self.__camera and self.type and VideoSourceType.USB_CAMERA.equals(self.type):
+        if self.__camera and self.type and ImageSourceType.USB_CAMERA.equals(self.type):
             self.__camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.__camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.__camera.set(cv2.CAP_PROP_FPS, self.fps)
@@ -107,10 +110,10 @@ class VideoCaptureSource(BaseVideoSource):
 
     @staticmethod
     def validate_camera_source(camera_source,
-                               camera_type=VideoSourceType.IP_CAMERA,
+                               camera_type=ImageSourceType.IP_CAMERA,
                                release=True):
         """验证VideoCapture对象是否有效"""
-        camera_source, camera_type = VideoSourceUtil.parse_video_source(
+        camera_source, camera_type = ImageSourceUtil.parse_video_source(
             camera_source, camera_type)
         __camera = cv2.VideoCapture(camera_source)
         if not __camera.isOpened():
@@ -190,7 +193,7 @@ if __name__ == '__main__':
     import os
 
     video_source = VideoCaptureSource(source=os.path.expanduser(video_file),
-                                      type=VideoSourceType.VIDEO_FILE, fps=5)
+                                      type=ImageSourceType.VIDEO_FILE, fps=5)
     video_source.daemon = True
     video_source.start()
 

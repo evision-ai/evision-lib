@@ -9,63 +9,82 @@
 #
 import time
 from queue import Queue
-from threading import RLock, Thread
+from threading import RLock
 
-from evision.lib.constant import Keys, VideoSourceType
+from evision.lib.constant import Keys
 from evision.lib.entity import Zone
 from evision.lib.log import LogHandlers, logutil
 from evision.lib.mixin import FailureCountMixin, SaveAndLoadConfigMixin
+from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
+from evision.lib.video.base import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
 
-class VideoSourceUtil(object):
-    DEFAULT_TYPE = VideoSourceType.IP_CAMERA
+class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
+    _MAX_FAIL_TIMES = 100
 
-    @classmethod
-    def parse_video_source(cls, source_, type_):
-        """根据来源和来源类型获取视频源信息"""
-        # video source setting
-        if type_ is None:
-            type_ = cls.DEFAULT_TYPE
-        elif isinstance(type_, int):
-            type_ = VideoSourceType(type_)
-        elif not isinstance(type_, VideoSourceType):
-            raise ValueError('Invalid video source type={}'.format(type_))
+    def __init__(self, source: [str, int] = None,
+                 source_type: [ImageSourceType, int] = None,
+                 width: int = None, height: int = None, fps: int = 5,
+                 **kwargs):
+        self._lock = RLock()
+        super().__init__(exclusive_init_lock=self._lock, **kwargs)
+        # 视频源地址及类型
+        self.source_config, self.source_type = \
+            ImageSourceUtil.parse_video_source(source, source_type)
+        # 视频源，如 VideoCapture、File、HttpRequest
+        self.source = None
+        self.fps = None
 
-        if VideoSourceType.USB_CAMERA.equals(type_) and not isinstance(source_, int):
-            source_ = int(source_)
+        # 需要在初始化视频源信息时更新
+        self.source_width = None
+        self.source_height = None
 
-        logger.info('Video source=[{}], type=[{}]', source_, type_)
-        return source_, type_
+    def init(self):
+        self._set_frame_size(self.width, self.height)
+        pass
 
-    @staticmethod
-    def check_frame_shape(width, height):
-        if not width and not height:
-            raise ValueError('Frame shape not provided')
-        if not width or not height:
-            raise ValueError('Frame width and height should be both or either '
-                             'set, provided=[{}, {}]', width, height)
-        if width < 1 or height < 1:
-            raise ValueError('Invalid camera frame size=[{}, {}]'.format(width, height))
-        return width, height
+    @property
+    def frame_size(self):
+        return (self.width, self.height)
+
+    def _set_frame_size(self, width, height):
+        """设置视频源画面尺寸"""
+        if self.width == width and self.height == height:
+            return
+        width, height = ImageSourceUtil.check_frame_shape(width, height)
+        # 画面尺寸
+        self.width = width
+        self.height = height
+        # 缩放比
+
+    def _update_zoom_ratio(self):
+        """更新视频源图像帧的缩放比"""
+        if self.original_frame_width:
+            self.zoom_ratio = float(self.frame_width) / self.original_frame_width
+            return
+        if self.original_frame_height:
+            self.zoom_ratio = float(self.frame_height) / self.original_frame_height
+            return
+
+    def process(self):
+        pass
 
 
-class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
+class BaseImageProvider(BaseImageSource):
     """ Video Source Base
 
     Denoting a video source, which can produce image frames
     """
-    type: VideoSourceType
-    _MAX_FAIL_TIMES = 100
     __DEFAULT_FPS = 5
 
     _should_crop_zone: bool
     _should_resize_frame: bool
 
     def __init__(self, source: [str, int] = None,
-                 type: [VideoSourceType, int] = None,
+                 type: [ImageSourceType, int] = None,
                  width: int = None, height: int = None, fps: int = 5,
                  name: str = None, description: str = None,
                  zone_start_x: int = None, zone_start_y: int = None,
@@ -73,11 +92,11 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
                  frame_queue_size: int = 1, id: str = None, **kwargs):
         """视频源初始化
 
+        :param source: 视频源地址
+        :param type: 视频源类型
         :param width: 视频源宽度
         :param height: 视频源高度
         :param fps: 视频源帧率
-        :param source: 视频源地址
-        :param type: 视频源类型
         :param name: 视频源名称
         :param description: 视频源描述
         :param zone_start_x: 指定视频裁剪区域横向开始位置
@@ -87,12 +106,9 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
         :param frame_queue_size: 帧队列长度
         :param id: 视频源 ID
         """
-        SaveAndLoadConfigMixin.__init__(self)
-        FailureCountMixin.__init__(self)
-        Thread.__init__(self)
+        super().__init__(source=source, source_type=type)
 
         # 视频源地址及类型
-        self.source, self.type = VideoSourceUtil.parse_video_source(source, type)
         self.__camera = None
         self._frame_queue = Queue(frame_queue_size)
 
@@ -101,14 +117,13 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
         self.__inited = False
 
         # 需要在初始化视频源信息时更新
-        self.original_frame_width = None
-        self.original_frame_height = None
+        self.source_width = None
+        self.source_height = None
         self.zoom_ratio = None
         # 视频源尺寸信息
-        self.frame_width = None
-        self.frame_height = None
-        self.frame_size = None
-        self.set_frame_size(width, height)
+        self.width = None
+        self.height = None
+        self._set_frame_size(width, height)
 
         self.original_fps = None
         self.fps = None
@@ -125,56 +140,13 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
         self.kwargs = kwargs
         self.debug = True if kwargs and kwargs.get('debug') else False
-
         # 初始化视频源
-        self._init()
         logger.info('{}[{}] inited, source={}, type={}, '
                     'frame size={}, fps={}, name={}, description={}, zone={}',
                     self.__class__.__name__, self.id,
-                    self.source, self.type,
+                    self.source, self.source_type,
                     self.frame_size, self.fps,
                     self.name, self.description, self.zone)
-
-    def _init(self):
-        try:
-            with self._lock:
-                if self.__inited:
-                    logger.info('VideoSource[{}] already inited', self.alias)
-                    return
-                self.init()
-            self.__inited = True
-        except Exception as e:
-            logger.exception('Failed initializing video source, '
-                             'please check you configuration', e)
-            raise e
-
-    def init(self):
-        """初始化视频源配置"""
-        pass
-
-    def set_frame_size(self, width, height):
-        """设置视频源画面尺寸"""
-        if self.frame_width == width and self.frame_height == height:
-            return
-        width, height = VideoSourceUtil.check_frame_shape(width, height)
-        # 画面尺寸
-        self.frame_width = width
-        self.frame_height = height
-        self.frame_size = (width, height)
-        # 缩放比
-        self._update_zoom_ratio()
-        if self.__inited:
-            logger.info('[{}] Set frame size={}, zoom ratio={}',
-                        self.alias, self.frame_size, self.zoom_ratio)
-
-    def _update_zoom_ratio(self):
-        """更新视频源图像帧的缩放比"""
-        if self.original_frame_width:
-            self.zoom_ratio = float(self.frame_width) / self.original_frame_width
-            return
-        if self.original_frame_height:
-            self.zoom_ratio = float(self.frame_height) / self.original_frame_height
-            return
 
     def set_frame_rate(self, fps):
         """更新视频源帧率及帧间隔"""
@@ -218,14 +190,14 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     def get_properties(self):
         # TODO 更新描述方式
         _camera_type = self.type.value \
-            if isinstance(self.type, VideoSourceType) \
+            if isinstance(self.type, ImageSourceType) \
             else self.type
 
         _properties = {
             Keys.SOURCE: self.source,
             Keys.TYPE: _camera_type,
-            Keys.WIDTH: self.frame_width,
-            Keys.HEIGHT: self.frame_height,
+            Keys.WIDTH: self.width,
+            Keys.HEIGHT: self.height,
             Keys.FPS: self.fps,
             Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description,
@@ -276,7 +248,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
         if start_x is None or start_y is None or width is None or height is None:
             return None
         zone = Zone(start_x, start_y, width=width, height=height)
-        zone.validate_shape(self.frame_width, self.frame_height)
+        zone.validate_shape(self.width, self.height)
         return zone
 
     def random_frame_id(self):
@@ -286,22 +258,6 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
     def work(self):
         """实际工作方法"""
         pass
-
-    def run(self):
-        """线程工作方法封装"""
-        self._init()
-
-        while self._keep_running:
-            if self.debug:
-                start = time.perf_counter()
-                self.work()
-                logger.debug('[{}] Read frame with {:.2f}ms',
-                             self.id, 1000.0 * (time.perf_counter() - start))
-            else:
-                self.work()
-
-        logger.info("Camera[{}], source={}, type={} stopped",
-                    self.name, self.source, self.type)
 
     def start_working(self):
         """将服务作为后台服务启动"""
@@ -329,7 +285,7 @@ class BaseVideoSource(Thread, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @staticmethod
     def validate_camera_source(
-        camera_source, camera_type=VideoSourceType.IP_CAMERA, release=True):
+        camera_source, camera_type=ImageSourceType.IP_CAMERA, release=True):
         """验证视频源是否有效"""
         pass
 
