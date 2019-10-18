@@ -15,6 +15,12 @@ logger = logutil.get_logger(Loggers.CONSOLE)
 _ALL_VISIBLE = False
 _RAND = False
 
+__all__ = [
+    'setup_gpu_index',
+    'get_gpu_memory_status',
+    'get_gpu_status'
+]
+
 
 def setup_gpu_index(gpu_id):
     key = 'CUDA_VISIBLE_DEVICES'
