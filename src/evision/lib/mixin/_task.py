@@ -11,7 +11,8 @@
 class FailureCountMixin(object):
     """提供服务失败次数记录及重置的功能"""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._fail_count = 0
         self.__listeners = {}
 

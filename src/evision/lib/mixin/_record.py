@@ -32,6 +32,7 @@ class HistoryRecorderMixin(object):
         :param keep_recent: process most recent tasks or drop frequent tasks
         :param expiry_time: expiry time of record history
         """
+        super().__init__(**kwargs)
         self._last_seen_map = {}
         self.key_field = index_field if index_field else self._key_field
         self.keep_recent = keep_recent if keep_recent is not None else self._keep_recent
