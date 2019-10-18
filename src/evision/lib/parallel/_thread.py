@@ -10,15 +10,15 @@
 from threading import Thread
 
 from evision.lib.log import logutil
-
 from ._base import ParallelWrapperMixin
 
 logger = logutil.get_logger()
 
 
 class ThreadWrapper(ParallelWrapperMixin, Thread):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, name=None, *args, **kwargs):
+        Thread.__init__(self, name=name, args=args, kwargs=kwargs)
+        ParallelWrapperMixin.__init__(self, *args, **kwargs)
 
     def stop(self):
         if self._ended:

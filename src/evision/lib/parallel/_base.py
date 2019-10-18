@@ -8,6 +8,7 @@
 # @version: 1.0
 #
 import threading
+
 import time
 
 from evision.lib.log import logutil
@@ -56,10 +57,9 @@ class ParallelWrapperMixin(object):
     _running = False
     _ended = False
 
-    def __init__(self, name, interval=None,
+    def __init__(self, name=None, interval=None,
                  show_error=False, fail_on_error=False,
                  exclusive_init_lock=False, **kwargs):
-        super().__init__(name=name, **kwargs)
         if not hasattr(self, 'name'):
             self.name = name
         self.interval = interval
@@ -114,9 +114,9 @@ class ParallelWrapperMixin(object):
             if self._stop_event.is_set():
                 return
             self.on_start()
-        except Exception:
-            logger.error('Failed preparing {}, type={}',
-                         self.name, self.__class__)
+        except Exception as e:
+            logger.exception('Failed preparing {}, type={}',
+                             self.name, self.__class__, e)
             self._stop_event.set()
 
         while not self._stop_event.is_set():

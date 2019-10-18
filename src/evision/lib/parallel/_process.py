@@ -21,10 +21,8 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
     def __init__(self, name=None, paths=None,
                  answer_sigint=False, answer_sigterm=False,
                  *args, **kwargs):
-        if self.name:
-            super().__init__(name=name, args=args, kwargs=kwargs)
-        else:
-            super().__init__(args=args, kwargs=kwargs)
+        Process.__init__(self, name=name, args=args, kwargs=kwargs)
+        ParallelWrapperMixin.__init__(self, *args, **kwargs)
         self._paths = paths
 
         self.answer_sigint = answer_sigint
@@ -68,6 +66,7 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
             return
         import sys
         import os
+
         _path = self._paths
         assert isinstance(_path, str)
         _path = _path.split(':') if ':' in _path else [_path, ]
