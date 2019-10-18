@@ -13,9 +13,18 @@ from enum import Enum
 class VideoSourceType(Enum):
     """ Identify video source type
     """
+    # 网络摄像头
     IP_CAMERA = 1
+    # USB 摄像头
     USB_CAMERA = 2
+    # 视频文件
     VIDEO_FILE = 3
+    # 视频链接
+    VIDEO_LINK = 4
+    # 图片链接
+    IMAGE_LINK = 5
+    # 图片文件
+    IMAGE_FILE = 6
 
     def equals(self, value):
         if value is None:
