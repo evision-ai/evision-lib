@@ -2,7 +2,6 @@
 # @author: Chen Shijiang (chenshijiang@evision.ai)
 # @version: 1.0
 #
-from enum import Enum
 
 from fields import Fields
 
@@ -161,26 +160,7 @@ class DeploymentType:
     }
 
 
-class VideoSourceType(Enum):
-    """ Identify video source type
-    """
-    IP_CAMERA = 1
-    USB_CAMERA = 2
-    VIDEO_FILE = 3
-
-    def equals(self, value):
-        if value is None:
-            return False
-        elif isinstance(value, int):
-            return self.value == value
-        elif isinstance(value, VideoSourceType):
-            return self.value == value.value
-        else:
-            return False
-
-
 __all__ = [
-    'Keys', 'ParamKey', 'Fields', 'Error', 'VideoSourceType',
-    'Status', 'Message',
+    'Keys', 'ParamKey', 'Fields', 'Error', 'Status', 'Message',
     'Suffix', 'DeploymentType'
 ]
