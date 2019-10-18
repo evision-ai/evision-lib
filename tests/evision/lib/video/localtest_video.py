@@ -9,7 +9,7 @@
 import pytest
 
 from evision.lib.video.base import ImageSourceType
-from evision.lib.video import VideoCapturePreview, VideoCaptureSource
+from evision.lib.video import VideoCapturePreview, VideoCaptureZoomedSource
 
 width, height = 960, 540
 
@@ -27,15 +27,15 @@ def start_camera(video_source):
 @pytest.skip
 def test_ip_camera():
     _source = 'rtsp://admin:password@192.100.1.134:554/h264/ch1/main/av_stream'
-    video_source = VideoCaptureSource(_source, ImageSourceType.IP_CAMERA,
-                                      width, height, 5)
+    video_source = VideoCaptureZoomedSource(_source, ImageSourceType.IP_CAMERA,
+                                            width, height, 5)
     start_camera(video_source)
 
 
 @pytest.skip
 def test_usb_camera():
-    video_source = VideoCaptureSource(0, ImageSourceType.USB_CAMERA,
-                                      width, height, 5)
+    video_source = VideoCaptureZoomedSource(0, ImageSourceType.USB_CAMERA,
+                                            width, height, 5)
     start_camera(video_source)
 
 
@@ -43,8 +43,8 @@ def test_usb_camera():
 def test_video_file():
     import os
     video_file = os.path.expanduser('~/Downloads/test.avi')
-    video_source = VideoCaptureSource(video_file, ImageSourceType.VIDEO_FILE,
-                                      width, height, 5)
+    video_source = VideoCaptureZoomedSource(video_file, ImageSourceType.VIDEO_FILE,
+                                            width, height, 5)
     start_camera(video_source)
 
 
