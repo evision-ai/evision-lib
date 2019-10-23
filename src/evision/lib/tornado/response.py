@@ -15,11 +15,10 @@ from tornado import gen, stack_context
 from tornado.log import app_log
 from tornado.stack_context import run_with_stack_context
 
-from evision.lib.log import LogHandlers
+from evision.lib.context import RequestIdContext
 from evision.lib.log import logutil
-from evision.lib.log.logutil import RequestIdContext
 
-logger = logutil.get_logger(LogHandlers.DEFAULT)
+logger = logutil.get_logger()
 
 
 class Response(object):

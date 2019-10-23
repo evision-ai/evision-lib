@@ -2,8 +2,6 @@
 # API处理逻辑基础结构
 #
 
-from enum import Enum
-
 import cv2
 import numpy as np
 import tornado.web
@@ -11,25 +9,11 @@ from webargs import ValidationError
 from webargs.tornadoparser import HTTPError
 
 from evision.lib.constant import Message, Status
-from evision.lib.log import LogHandlers
+from evision.lib.context import RequestIdContext, with_request_id
 from evision.lib.log import logutil
-from evision.lib.log.logutil import RequestIdContext
 from evision.lib.tornado.response import Response
 
-logger = logutil.get_logger(LogHandlers.DEFAULT)
-
-
-class ImageSourceType(Enum):
-    """用户调用API时提供的图片类型"""
-    # 本地图片
-    LOCAL = 1
-    # 图像链接
-    URL = 2
-    # 从摄像头直接抓取,摄像头ID
-    CAMERA = 3
-
-    def equals(self, value):
-        return self.value == value
+logger = logutil.get_logger()
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -44,7 +28,7 @@ class BaseHandler(tornado.web.RequestHandler):
     __allow_origins = [
     ]
 
-    @logutil.with_request_id
+    @with_request_id
     async def initialize(self):
         """
         make the request id context is available
