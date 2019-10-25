@@ -21,7 +21,7 @@ class ImageSourceWrapperConfig(object):
     """
     width: int
     height: int
-    zone: Zone
+    zone: [Zone, None]
 
     def __init__(self, width: int, height: int,
                  zone_start_x: int = 0, zone_start_y: int = 0,
@@ -36,13 +36,14 @@ class ImageSourceWrapperConfig(object):
         :param zone_width:裁剪区域宽度
         :param zone_height:裁剪区域高度
         """
+        self.zone = None
         if width and height and zone_width and zone_height:
             assert zone_start_x + zone_width <= width
             assert zone_start_y + zone_height <= height
+            self.zone = Zone(zone_start_x, zone_start_y, zone_width, zone_height)
 
         self.width = width
         self.height = height
-        self.zone = Zone(zone_start_x, zone_start_y, zone_width, zone_height)
 
     @property
     def size(self):
@@ -77,13 +78,17 @@ class ImageSourceWrapper():
         :param image_source: 图像源配置
         :param wrapper_config: 图像源封装配置
         """
-        assert self._image_source
+        assert image_source
         self._image_source = image_source
 
         self.zone = None
         self.width, self.height = None, None
         if wrapper_config:
             self.__dict__.update(wrapper_config.__dict__)
+
+    @property
+    def name(self):
+        return self._image_source.alias
 
     @property
     def zoom_ratio(self):
