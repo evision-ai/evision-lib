@@ -281,6 +281,7 @@ class ImageFrame(object):
         self.zone = zone
 
         self.timestamp = int(time.time())
+        self.extras = {}
 
     @decorator.CachedProperty
     def is_zoomed(self):
