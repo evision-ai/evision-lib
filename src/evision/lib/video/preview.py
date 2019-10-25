@@ -6,12 +6,10 @@
 # @date: 2019-10-18 19:38
 # @version: 1.0
 #
-import logging
 from threading import Thread
 
 import cv2
 
-from evision.lib.log import logconfig
 from evision.lib.video import BaseImageSource, ImageSourceType, VideoCaptureZoomedSource
 from evision.lib.video.camera import VideoCaptureImageSource
 
@@ -43,7 +41,7 @@ class VideoCapturePreview(ImageSourcePreview):
     source: VideoCaptureZoomedSource
 
     def run(self):
-        if self.source.zone is not None:
+        if hasattr(self.source, 'zone') and self.source.zone is not None:
             text_org = (self.source.zone.start_x + 4, self.source.zone.end_y - 4)
         else:
             text_org = None
@@ -68,21 +66,28 @@ class VideoCapturePreview(ImageSourcePreview):
 
 
 if __name__ == '__main__':
-    video_file = 'D:/test.mp4'
-    source = VideoCaptureImageSource(video_file, ImageSourceType.VIDEO_FILE,
-                                     fps=24, debug=True)
-    source.daemon = True
-    source.start()
-    preview = ImageSourcePreview(source)
-    preview.run()
-    source.stop()
-    # video_file = '~/Downloads/test.avi'
-    # import os
-    #
-    # video_source = VideoCaptureZoomedSource(source=os.path.expanduser(video_file),
-    #                                   type=ImageSourceType.VIDEO_FILE, fps=5)
-    # video_source.daemon = True
-    # video_source.start()
-    # preview = VideoCapturePreview(video_source)
+    # video_file = 'D:/test.mp4'
+    # source = VideoCaptureImageSource(video_file, ImageSourceType.VIDEO_FILE,
+    #                                  fps=24, debug=True)
+    # source.daemon = True
+    # source.start()
+    # preview = ImageSourcePreview(source)
     # preview.run()
-    # video_source.stop()
+    # source.stop()
+    import os
+
+    source = os.path.expanduser('~/Downloads/test.avi')
+    source_type = ImageSourceType.VIDEO_FILE
+
+    source = 'rtsp://admin:1111aaaa@192.100.1.189:554/h264/ch1/main/av_stream'
+    source_type = ImageSourceType.IP_CAMERA
+
+    video_source = VideoCaptureImageSource(
+        source=source, type=source_type,
+        width=960, height=480,
+        zone_width=960, zone_height=480, fps=5)
+    video_source.daemon = True
+    video_source.start()
+    preview = VideoCapturePreview(video_source)
+    preview.run()
+    video_source.stop()

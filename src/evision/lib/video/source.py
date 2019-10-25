@@ -40,12 +40,12 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
         # 需要在初始化图像源信息时更新
         self.width, self.height = None, None
-        self.set_frame_size(width, height)
+        self.frame_size = width, height
 
         # 图像源 FPS
         self.original_fps = None
-        self.fps, self.frame_interval = None, None
-        self.set_fps(fps)
+        self._fps, self._frame_interval = None, None
+        self.fps = fps
 
         # 图像源地址及类型
         self.source_config, self.source_type = \
@@ -90,8 +90,8 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         image_frame = self.read_frame()
         if image_frame is None:
             if self.frame_interval:
-                logger.info('[{}] Read no frame, waiting for {:.3f}s',
-                            self.frame_interval)
+                logger.debug('[{}] Read no frame, waiting for {:.3f}s',
+                             self.name, self.frame_interval)
                 time.sleep(self.frame_interval)
 
         try:
@@ -129,6 +129,39 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         """
         return self.width, self.height
 
+    @frame_size.setter
+    def frame_size(self, value):
+        assert value and hasattr(value, '__len__') and len(value) == 2
+        width, height = value
+        if width == self.width and height == self.height:
+            return
+        width, height = ImageSourceUtil.check_frame_shape(*value)
+        self.width, self.height = width, height
+
+    @property
+    def fps(self):
+        return self._fps
+
+    @property
+    def frame_interval(self):
+        return self._frame_interval
+
+    @fps.setter
+    def fps(self, fps: [int, None] = None):
+        """更新图像源帧率及帧间隔"""
+        # 图像源帧率
+        if not fps:
+            return
+        if self._fps and self._fps == fps:
+            return
+        if not fps and fps < 1:
+            raise ValueError('Invalid FPS setting')
+        self._fps = fps
+        self._frame_interval = float(1) / self._fps
+        if self.__image_source_inited:
+            logger.info('[{}] Set fps={}, frame interval={}',
+                        self.alias, self.fps, self.frame_interval)
+
     @property
     def alias(self):
         return self.name if self.name else str(self.source_config)
@@ -153,30 +186,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
             raise ValueError('Invalid video source={} or type={}'.format(
                 self.source_config, self.source_type))
         return '{}-{}'.format(self.source_type.value, self.source_config)
-
-    def set_frame_size(self, width, height):
-        """设置图像源画面尺寸"""
-        if self.width == width and self.height == height:
-            return
-        width, height = ImageSourceUtil.check_frame_shape(width, height)
-        # 画面尺寸
-        self.width = width
-        self.height = height
-
-    def set_fps(self, fps: [int, None] = None):
-        """更新图像源帧率及帧间隔"""
-        # 图像源帧率
-        if not fps:
-            return
-        if self.fps and self.fps == fps:
-            return
-        if not fps and fps < 1:
-            raise ValueError('Invalid FPS setting')
-        self.fps = fps
-        self.frame_interval = float(1) / self.fps
-        if self.__image_source_inited:
-            logger.info('[{}] Set fps={}, frame interval={}',
-                        self.alias, self.fps, self.frame_interval)
 
     def set_name_description(self, name, description):
         if self.name == name and self.description == description:

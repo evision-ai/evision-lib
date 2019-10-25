@@ -72,9 +72,9 @@ class VideoCaptureImageSource(BaseImageSource):
             raise Exception('无法连接到摄像头/视频源，请检查')
 
         self.source = source_
-        self.set_frame_size(self.source.get(cv2.CAP_PROP_FRAME_WIDTH),
-                            self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.set_fps(self.source.get(cv2.CAP_PROP_FPS))
+        self.frame_size = self.source.get(cv2.CAP_PROP_FRAME_WIDTH), \
+                          self.source.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.fps = self.source.get(cv2.CAP_PROP_FPS)
         logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
                     self.source_config, self.source_type,
                     self.frame_size, self.fps)
