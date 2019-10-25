@@ -7,10 +7,9 @@
 # @version: 1.0
 #
 import queue
+import time
 from queue import Queue
 from threading import RLock
-
-import time
 
 from evision.lib.constant import Keys
 from evision.lib.entity import Zone
@@ -30,7 +29,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
                  source_type: [ImageSourceType, int] = None,
                  source_id: str = None,
                  width: int = None, height: int = None, fps: int = 5,
-                 frame_queue_size: int = 1,
+                 frame_queue_size: int = 24,
                  name: str = None, description: str = None, **kwargs):
         FailureCountMixin.__init__(self)
         SaveAndLoadConfigMixin.__init__(self)
@@ -43,7 +42,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         self.frame_size = width, height
 
         # 图像源 FPS
-        self.original_fps = None
         self._fps, self._frame_interval = None, None
         self.fps = fps
 
@@ -84,6 +82,37 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
             return None
 
     get = provide
+
+    def peek(self):
+        if self._frame_queue.empty():
+            return None
+        return self.current(block=False)
+
+    def current(self, n_frame=1, block=True, timeout=1):
+        """获取当前队列中最新的 {n_frame} 帧图像
+
+        :param n_frame: 需要获取的帧数目
+        :param block: 是否阻塞
+        :param timeout: 最多等待时间
+        """
+        if self._frame_queue.empty():
+            return None
+
+        if not block:
+            return None if self._frame_queue.qsize() < n_frame \
+                else self._frame_queue.queue[:n_frame]
+
+        try:
+            must_end = time.time() + timeout
+            while time.time() < must_end:
+                if self._frame_queue.qsize() >= n_frame:
+                    # NOTE: 可能取到少于 n_frame 帧图像，不做处理
+                    return self._frame_queue.queue[:n_frame]
+                time.sleep(self.frame_interval * (n_frame - self._frame_queue.qsize()))
+            return None
+        except queue.Empty:
+            logger.warn('Failed getting current image frame with empty queue')
+            return None
 
     def process(self):
         """图像源工作进程"""
