@@ -8,13 +8,13 @@
 # @version: 1.0
 #
 
+import time
+
 import cv2
 import numpy as np
-import time
 
 from evision.lib.log import LogHandlers, logutil
 from evision.lib.video import BaseImageSource, ImageSourceType, ImageSourceUtil
-from evision.lib.video import ZoomImageProvider
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
@@ -103,11 +103,3 @@ class VideoCaptureImageSource(BaseImageSource):
         if self.source and self.source.isOpened():
             self.source.release()
             del self.source
-
-
-class VideoCaptureZoomedSource(VideoCaptureImageSource, ZoomImageProvider):
-    __camera: cv2.VideoCapture
-
-    def on_start(self):
-        VideoCaptureImageSource.on_start(self)
-        ZoomImageProvider.on_start(self)

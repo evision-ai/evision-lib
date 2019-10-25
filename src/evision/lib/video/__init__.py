@@ -11,5 +11,5 @@ from .base import ImageSourceType, ImageSourceUtil
 from .source import BaseImageSource, ZoomImageProvider
 from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper
 
-from .camera import VideoCaptureImageSource, VideoCaptureZoomedSource
+from .camera import VideoCaptureImageSource
 from .preview import ImageSourcePreview, VideoCapturePreview
