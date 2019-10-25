@@ -100,14 +100,14 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
         if not block:
             return None if self._frame_queue.qsize() < n_frame \
-                else self._frame_queue.queue[:n_frame]
+                else [self._frame_queue.queue[i] for i in range(n_frame)]
 
         try:
             must_end = time.time() + timeout
             while time.time() < must_end:
                 if self._frame_queue.qsize() >= n_frame:
                     # NOTE: 可能取到少于 n_frame 帧图像，不做处理
-                    return self._frame_queue.queue[:n_frame]
+                    return [self._frame_queue.queue[i] for i in range(n_frame)]
                 time.sleep(self.frame_interval * (n_frame - self._frame_queue.qsize()))
             return None
         except queue.Empty:
