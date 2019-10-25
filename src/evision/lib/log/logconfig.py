@@ -60,9 +60,7 @@ class NullHandler(logging.Handler):
         pass
 
 
-def initialize_logging(syslog_tag, syslog_facility, loggers,
-                       log_level=logging.INFO, use_syslog=False,
-                       log_dir=None, log_file=None, show_console=False):
+def config(syslog_tag, loggers, log_level=logging.INFO, log_dir=None, show_console=False):
     if log_dir and not osp.exists(log_dir):
         import os
 
@@ -176,7 +174,5 @@ def initialize_logging(syslog_tag, syslog_facility, loggers,
 
 _default_inited = False
 if not _default_inited:
-    initialize_logging('', '', loggers={}, log_level=logging.INFO,
-                       use_syslog=False, log_dir=None, log_file=None,
-                       show_console=False)
+    config('', loggers={}, log_level=logging.INFO, log_dir=None, show_console=False)
     _default_inited = True
