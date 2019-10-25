@@ -7,7 +7,7 @@
 # @version: 1.0
 #
 
-from evision.lib.video import VideoCapturePreview, VideoCaptureZoomedSource
+from evision.lib.video import ImageSourceWrapperPreview, VideoCaptureZoomedSource
 from evision.lib.video.base import ImageSourceType
 
 width, height = 960, 540
@@ -17,7 +17,7 @@ def start_camera(video_source):
     video_source.daemon = True
     video_source.start()
 
-    preview = VideoCapturePreview(video_source)
+    preview = ImageSourceWrapperPreview(video_source)
     preview.run()
 
     video_source.stop()

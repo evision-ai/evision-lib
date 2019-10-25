@@ -6,16 +6,21 @@
 # @date: 2019-10-18 19:38
 # @version: 1.0
 #
+import time
 from threading import Thread
 
 import cv2
 
-from evision.lib.video import BaseImageSource, ImageSourceType, VideoCaptureZoomedSource
-from evision.lib.video.camera import VideoCaptureImageSource
+from evision.lib.entity import ImageFrame, Vertex
+from evision.lib.util import DrawUtil
+from evision.lib.video import (
+    ImageSourceType,
+    ImageSourceWrapper, VideoCaptureImageSource,
+)
 
 
 class ImageSourcePreview(Thread):
-    def __init__(self, source: BaseImageSource):
+    def __init__(self, source):
         Thread.__init__(self)
         self.source = source
 
@@ -25,6 +30,9 @@ class ImageSourcePreview(Thread):
     def run(self):
         while True:
             frame = self.source.provide()
+            if frame is None:
+                time.sleep(0.1)
+                continue
             frame = self.process(frame)
             if frame is None:
                 continue
@@ -36,33 +44,19 @@ class ImageSourcePreview(Thread):
         print('Finished preview')
 
 
-class VideoCapturePreview(ImageSourcePreview):
+class ImageSourceWrapperPreview(ImageSourcePreview):
     """视频源预览,需要图形界面支持"""
-    source: VideoCaptureZoomedSource
+    source: ImageSourceWrapper
 
-    def run(self):
-        if hasattr(self.source, 'zone') and self.source.zone is not None:
-            text_org = (self.source.zone.start_x + 4, self.source.zone.end_y - 4)
-        else:
-            text_org = None
-        while True:
-            frame = self.source.provide()
-            if frame is None:
-                continue
-            if text_org:
-                cv2.putText(frame, 'Detection Zone',
-                            org=text_org,
-                            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.5, color=(0, 255, 0), lineType=2)
-                cv2.rectangle(frame,
-                              self.source.zone.start_point,
-                              self.source.zone.end_point,
-                              (0, 255, 0), 2)
-            cv2.imshow(self.source.alias, frame)
-
-            if cv2.waitKey(200) & 0xFF == ord('q'):
-                cv2.destroyWindow(self.source.alias)
-                break
+    def process(self, image_frame: ImageFrame):
+        frame = image_frame.resized_frame
+        DrawUtil.put_text(frame, 'Resized frame shape: {}'.format(image_frame.resized_size),
+                          (10, 10))
+        if self.source.zone:
+            text_org = Vertex(self.source.zone.start_x + 4, self.source.zone.end_y - 4)
+            DrawUtil.put_text(frame, 'Detection Zone', text_org.to_tuple())
+            DrawUtil.draw_zone(frame, self.source.zone)
+        return frame
 
 
 if __name__ == '__main__':
@@ -74,20 +68,21 @@ if __name__ == '__main__':
     # preview = ImageSourcePreview(source)
     # preview.run()
     # source.stop()
-    import os
 
-    source = os.path.expanduser('~/Downloads/test.avi')
-    source_type = ImageSourceType.VIDEO_FILE
+    from evision.lib.video import ImageSourceWrapperConfig
 
     source = 'rtsp://admin:1111aaaa@192.100.1.189:554/h264/ch1/main/av_stream'
     source_type = ImageSourceType.IP_CAMERA
 
-    video_source = VideoCaptureImageSource(
-        source=source, type=source_type,
-        width=960, height=480,
-        zone_width=960, zone_height=480, fps=5)
+    video_source = VideoCaptureImageSource(source=source, type=source_type,
+                                           width=960, height=480, fps=5)
+    wrapper_config = ImageSourceWrapperConfig(
+        width=960, height=540,
+        zone_start_x=30, zone_start_y=20, zone_width=900, zone_height=500)
+    wrapper = ImageSourceWrapper(video_source, wrapper_config)
+
     video_source.daemon = True
     video_source.start()
-    preview = VideoCapturePreview(video_source)
+    preview = ImageSourceWrapperPreview(wrapper)
     preview.run()
     video_source.stop()

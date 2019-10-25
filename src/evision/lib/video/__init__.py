@@ -12,4 +12,4 @@ from .source import BaseImageSource, ZoomImageProvider
 from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper
 
 from .camera import VideoCaptureImageSource
-from .preview import ImageSourcePreview, VideoCapturePreview
+from .preview import ImageSourcePreview, ImageSourceWrapperPreview
