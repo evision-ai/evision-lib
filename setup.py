@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-
 import io
 import re
 from glob import glob
@@ -84,6 +81,9 @@ setup(
         'rst': [
             'docutils>=0.11',
         ],
+        'extras': [
+            'setproctitle',
+        ]
     },
     setup_requires=[
         'pytest-runner',
