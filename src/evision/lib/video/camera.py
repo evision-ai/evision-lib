@@ -13,10 +13,10 @@ import time
 import cv2
 import numpy as np
 
-from evision.lib.log import LogHandlers, logutil
+from evision.lib.log import logutil
 from evision.lib.video import BaseImageSource, ImageSourceType, ImageSourceUtil
 
-logger = logutil.get_logger(LogHandlers.DEFAULT)
+logger = logutil.get_logger()
 
 
 class VideoCaptureImageSource(BaseImageSource):
@@ -27,18 +27,6 @@ class VideoCaptureImageSource(BaseImageSource):
     - 本地视频文件：ImageSourceType.VIDEO_FILE
     """
     source: cv2.VideoCapture
-
-    def read_frame(self):
-        """从视频源直接获取图像帧"""
-        with self._lock:
-            ret, camera_frame = self.source.read()
-            if not ret or np.all(camera_frame == 0):
-                self.accumulate_failure_count()
-                self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
-                time.sleep(self.frame_interval)
-                return None
-            self.reset_failure_count()
-            return camera_frame
 
     @staticmethod
     def validate_source(source_config, source_type, release=True):
@@ -78,6 +66,18 @@ class VideoCaptureImageSource(BaseImageSource):
         logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
                     self.source_config, self.source_type,
                     self.frame_size, self.fps)
+
+    def read_frame(self):
+        """从视频源直接获取图像帧"""
+        with self._lock:
+            ret, camera_frame = self.source.read()
+            if not ret or np.all(camera_frame == 0):
+                self.accumulate_failure_count()
+                self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
+                time.sleep(self.frame_interval)
+                return None
+            self.reset_failure_count()
+            return camera_frame
 
     def reload_source(self):
         """重新连接视频源

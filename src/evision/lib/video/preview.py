@@ -13,18 +13,28 @@ import cv2
 
 from evision.lib.entity import ImageFrame, Vertex
 from evision.lib.util import DrawUtil
-from evision.lib.video import (
-    ImageSourceType,
-    ImageSourceWrapper, VideoCaptureImageSource,
-)
+from evision.lib.video import (BaseImageSource, ImageSourceType, ImageSourceWrapper, VideoCaptureImageSource)
 
 
 class ImageSourcePreview(Thread):
-    def __init__(self, source):
+    def __init__(self, source: [BaseImageSource, ImageSourceWrapper]):
         Thread.__init__(self)
         self.source = source
 
-    def process(self, frame):
+        _type_source = type(source)
+        if _type_source == ImageSourceWrapper:
+            self.process = self._process_source_wrapper
+        else:
+            self.process = lambda x: x
+
+    def _process_source_wrapper(self, image_frame: ImageFrame):
+        frame = image_frame.resized_frame
+        DrawUtil.put_text(frame, 'Resized frame shape: {}'.format(image_frame.resized_size),
+                          (10, 10))
+        if self.source.zone:
+            text_org = Vertex(self.source.zone.start_x + 4, self.source.zone.end_y - 4)
+            DrawUtil.put_text(frame, 'Detection Zone', text_org.to_tuple())
+            DrawUtil.draw_zone(frame, self.source.zone)
         return frame
 
     def run(self):
@@ -42,21 +52,6 @@ class ImageSourcePreview(Thread):
                 cv2.destroyWindow(self.source.name)
                 break
         print('Finished preview')
-
-
-class ImageSourceWrapperPreview(ImageSourcePreview):
-    """视频源预览,需要图形界面支持"""
-    source: ImageSourceWrapper
-
-    def process(self, image_frame: ImageFrame):
-        frame = image_frame.resized_frame
-        DrawUtil.put_text(frame, 'Resized frame shape: {}'.format(image_frame.resized_size),
-                          (10, 10))
-        if self.source.zone:
-            text_org = Vertex(self.source.zone.start_x + 4, self.source.zone.end_y - 4)
-            DrawUtil.put_text(frame, 'Detection Zone', text_org.to_tuple())
-            DrawUtil.draw_zone(frame, self.source.zone)
-        return frame
 
 
 if __name__ == '__main__':
@@ -83,6 +78,6 @@ if __name__ == '__main__':
 
     video_source.daemon = True
     video_source.start()
-    preview = ImageSourceWrapperPreview(wrapper)
+    preview = ImageSourcePreview(wrapper)
     preview.run()
     video_source.stop()

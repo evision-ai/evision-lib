@@ -136,6 +136,8 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     def validate_source(source_config, source_type, release=True):
         """验证视频源是否有效
         对应参数： source_config、source_type
+        :param source_config 图像源配置地址
+        :param source_type 图像源类型
         :param release 图像源校验完成后是否释放资源
         :return 校验通过的图像源
         """
