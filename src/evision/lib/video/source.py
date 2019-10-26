@@ -11,8 +11,10 @@ import time
 from queue import Queue
 from threading import RLock
 
+import cv2
+import numpy as np
+
 from evision.lib.constant import Keys
-from evision.lib.entity import Zone
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, SaveAndLoadConfigMixin
 from evision.lib.parallel import ThreadWrapper
@@ -20,6 +22,11 @@ from evision.lib.util import CacheUtil
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger()
+
+__all__ = [
+    'BaseImageSource',
+    'VideoCaptureSource'
+]
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
@@ -257,138 +264,87 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         }
 
 
-class ZoomImageProvider(BaseImageSource):
-    """ Video Source Base
-
-    Denoting a video source, which can produce image frames
+class VideoCaptureSource(BaseImageSource):
+    """VideoCapture类型的视频源封装
+    支持视频源类型：
+    - 网络摄像头：ImageSourceType.IP_CAMERA
+    - USB 摄像头：ImageSourceType.USB_CAMERA
+    - 本地视频文件：ImageSourceType.VIDEO_FILE
     """
+    source: cv2.VideoCapture
 
-    __DEFAULT_FPS = 5
+    @staticmethod
+    def validate_source(source_config, source_type, release=True):
+        source_config, source_type = ImageSourceUtil.parse_source_config(
+            source_config, source_type)
+        """验证VideoCapture对象是否有效"""
+        source_ = cv2.VideoCapture(source_config)
+        if not source_.isOpened():
+            logger.warning('Failed connecting to camera=[{}], type={}',
+                           source_config, source_type)
+            return None
 
-    _should_crop_zone: bool
-    _should_resize_frame: bool
+        ret, frame = source_.read()
 
-    def __init__(self, source: [str, int] = None,
-                 type: [ImageSourceType, int] = None,
-                 width: int = None, height: int = None, fps: int = 5,
-                 name: str = None, description: str = None,
-                 zone_start_x: int = None, zone_start_y: int = None,
-                 zone_width: int = None, zone_height: int = None,
-                 frame_queue_size: int = 1, id: str = None, **kwargs):
-        """视频源初始化
+        if not ret:
+            logger.warning('Camera[{}, type={}] opened but failed getting frame',
+                           source_config, source_type)
+            return None
 
-        :param source: 视频源地址
-        :param type: 视频源类型
-        :param width: 视频源宽度
-        :param height: 视频源高度
-        :param fps: 视频源帧率
-        :param name: 视频源名称
-        :param description: 视频源描述
-        :param zone_start_x: 指定视频裁剪区域横向开始位置
-        :param zone_start_y: 指定视频裁剪区域纵向开始位置
-        :param zone_width: 指定视频裁剪区域宽度
-        :param zone_height: 指定视频裁剪区域高度
-        :param frame_queue_size: 帧队列长度
-        :param id: 视频源 ID
-        """
-        super().__init__(source=source, source_type=type, source_id=id,
-                         width=width, height=height, fps=fps,
-                         name=name, description=description,
-                         frame_queue_size=frame_queue_size, **kwargs)
+        if release:
+            source_.release()
+            return frame
 
-        self._keep_running = True
-        self.__inited = False
-
-        # 需要在初始化视频源信息时更新
-        self.zoom_ratio = None
-        self.zoomed_width = None
-        self.zoomed_height = None
-        self.set_zoomed_size(width, height)
-
-        self.zone = None
-        self.set_zone_info(zone_start_x, zone_start_y, zone_width, zone_height)
-
-        # 初始化视频源
-        logger.info('{}[{}] inited, source={}, type={}, '
-                    'frame size={}, fps={}, name={}, description={}, zone={}',
-                    self.__class__.__name__, self.source_id,
-                    self.source_config, self.source_type,
-                    self.frame_size, self.fps,
-                    self.name, self.description, self.zone)
-
-    def read_frame(self):
-        raise NotImplementedError()
-
-    def set_zoomed_size(self, width, height):
-        if self.zoomed_width == width and self.zoomed_height == height:
-            return
-        """设置视频源画面尺寸"""
-        width, height = ImageSourceUtil.check_frame_shape(width, height)
-        # 画面尺寸
-        self.zoomed_width = width
-        self.zoomed_height = height
-        # 缩放比
-        self.update_zoom_ratio()
-        logger.info('[{}] Set zoomed frame size={}, zoom ratio={}',
-                    self.alias, self.zoomed_size, self.zoom_ratio)
-
-    def update_zoom_ratio(self):
-        """更新视频源图像帧的缩放比"""
-        if self.width:
-            self.zoom_ratio = float(self.zoomed_width) / self.width
-            return
-        if self.height:
-            self.zoom_ratio = float(self.zoomed_height) / self.height
-            return
+        return source_
 
     def on_start(self):
-        if self.zoomed_width:
-            self.zoom_ratio = float(self.zoomed_width) / self.width
-            self.zoomed_height = int(self.height * self.zoom_ratio)
-        elif self.zoomed_height:
-            self.zoom_ratio = float(self.zoomed_height) / self.height
-            self.zoomed_width = int(self.width * self.zoom_ratio)
-        else:
-            self.zoom_ratio = 1
-            self.zoomed_width = self.width
-            self.zoomed_height = self.height
+        """创建VideoCapture对象"""
+        source_ = self.validate_source(self.source_config, self.source_type,
+                                       release=False)
+        if source_ is None or not source_.isOpened():
+            raise Exception('无法连接到摄像头/视频源，请检查')
 
-    @property
-    def zoomed_size(self):
-        return self.zoomed_width, self.zoomed_height
+        self.source = source_
+        self.frame_size = self.source.get(cv2.CAP_PROP_FRAME_WIDTH), \
+                          self.source.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.fps = self.source.get(cv2.CAP_PROP_FPS)
+        logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
+                    self.source_config, self.source_type,
+                    self.frame_size, self.fps)
 
-    def set_zone_info(self, zone_start_x, zone_start_y, zone_width, zone_height):
-        """更新视频源检测区域"""
-        self.zone = self.__check_detection_zone(
-            zone_start_x, zone_start_y, zone_width, zone_height)
-        if self.__inited:
-            logger.info('[{}] Set detection zone={}', self.alias, self.zone)
+    def read_frame(self):
+        """从视频源直接获取图像帧"""
+        with self._lock:
+            ret, camera_frame = self.source.read()
+            if not ret or np.all(camera_frame == 0):
+                self.accumulate_failure_count()
+                self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
+                time.sleep(self.frame_interval)
+                return None
+            self.reset_failure_count()
+            return camera_frame
 
-    def get_properties(self):
-        _properties = super().get_properties()
-        if self.zone is not None:
-            assert isinstance(self.zone, Zone)
-            _properties.update({
-                Keys.CAMERA_ZONE_START_X: self.zone.start_x,
-                Keys.CAMERA_ZONE_START_Y: self.zone.start_y,
-                Keys.CAMERA_ZONE_WIDTH: self.zone.width,
-                Keys.CAMERA_ZONE_HEIGHT: self.zone.height
-            })
-        else:
-            _properties.update({
-                Keys.CAMERA_ZONE_START_X: None,
-                Keys.CAMERA_ZONE_START_Y: None,
-                Keys.CAMERA_ZONE_WIDTH: None,
-                Keys.CAMERA_ZONE_HEIGHT: None
-            })
-        return _properties
+    def reload_source(self):
+        """重新连接视频源
 
-    def __check_detection_zone(self, start_x, start_y, width, height):
-        if start_x is None or start_y is None or width is None or height is None:
-            return None
-        zone = Zone(start_x, start_y, width=width, height=height)
-        zone.validate_shape(self.zoomed_width, self.zoomed_height)
-        return zone
+        USB 摄像头不允许并行连接，必须先释放现有连接
+        """
+        self.reset_failure_count()
+        with self._lock:
+            if self.source.isOpened() \
+                and ImageSourceType.USB_CAMERA == self.source_type:
+                self.source.release()
+            source_ = self.validate_source(
+                self.source_config, self.source_type, release=False)
+            if source_ is None or not source_.isOpened():
+                raise Exception('Failed initialized video source={}'.format(
+                    self.source))
+            if self.source.isOpened():
+                self.source.release()
+            self.source = source_
+        logger.info('Reload video source={}', self.source)
 
-    def __del__(self):
-        self.stop()
+    def on_stop(self):
+        if self.source and self.source.isOpened():
+            self.source.release()
+            del self.source

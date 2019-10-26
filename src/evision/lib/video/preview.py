@@ -13,7 +13,7 @@ import cv2
 
 from evision.lib.entity import ImageFrame, Vertex
 from evision.lib.util import DrawUtil
-from evision.lib.video import (BaseImageSource, ImageSourceType, ImageSourceWrapper, VideoCaptureImageSource)
+from evision.lib.video import (BaseImageSource, ImageSourceType, ImageSourceWrapper, VideoCaptureSource)
 
 
 class ImageSourcePreview(Thread):
@@ -69,8 +69,8 @@ if __name__ == '__main__':
     source = 'rtsp://admin:1111aaaa@192.100.1.189:554/h264/ch1/main/av_stream'
     source_type = ImageSourceType.IP_CAMERA
 
-    video_source = VideoCaptureImageSource(source=source, type=source_type,
-                                           width=960, height=480, fps=5)
+    video_source = VideoCaptureSource(source=source, type=source_type,
+                                      width=960, height=480, fps=5)
     wrapper_config = ImageSourceWrapperConfig(
         width=960, height=540,
         zone_start_x=30, zone_start_y=20, zone_width=900, zone_height=500)

@@ -8,8 +8,7 @@
 # @version: 1.0
 
 from .base import ImageSourceType, ImageSourceUtil
-from .source import BaseImageSource, ZoomImageProvider
+from .source import BaseImageSource, VideoCaptureSource
 from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper
 
-from .camera import VideoCaptureImageSource
 from .preview import ImageSourcePreview
