@@ -133,6 +133,7 @@ class ParallelWrapperMixin(object):
                     logger.error('[{}] Failed on error: {}', self.name, e)
                     break
 
+            self.__tick.count()
             toc = time.perf_counter()
             elapsed = toc - tick
             if self.interval and self.interval > 0 and elapsed < self.interval:
