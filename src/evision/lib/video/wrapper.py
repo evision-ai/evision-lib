@@ -7,8 +7,12 @@
 # @date: 2019-10-25 16:24
 # @version: 1.0
 #
+from evision.lib.log import logutil
+
 from evision.lib.entity import Zone, ImageFrame
 from evision.lib.video import BaseImageSource, ImageSourceUtil
+
+logger = logutil.get_logger()
 
 __all__ = [
     'ImageSourceWrapperConfig',
@@ -36,14 +40,15 @@ class ImageSourceWrapperConfig(object):
         :param zone_width:裁剪区域宽度
         :param zone_height:裁剪区域高度
         """
-        self.zone = None
-        if width and height and zone_width and zone_height:
-            assert zone_start_x + zone_width <= width
-            assert zone_start_y + zone_height <= height
-            self.zone = Zone(zone_start_x, zone_start_y, zone_width, zone_height)
-
         self.width = width
         self.height = height
+
+        if not zone_width or not zone_height:
+            self.zone = None
+        else:
+            self.zone = Zone(zone_start_x, zone_start_y, zone_width, zone_height)
+
+        self.validate()
 
     @property
     def size(self):
@@ -60,11 +65,42 @@ class ImageSourceWrapperConfig(object):
             return
         self.width, self.height = ImageSourceUtil.check_frame_shape(width, height)
 
+    def validate(self, frame_width: int = None, frame_height: int = None):
+        """ 校验视频源处理配置
+
+        :param frame_width: 图像源原始宽度
+        :param frame_height:  图像源原始高度
+        """
+        if frame_width is None or frame_height is None:
+            return
+        self._validate_zoom()
+        self._validate_zone(frame_width, frame_height)
+
+    def _validate_zoom(self):
+        """ 校验视频源缩放配置
+        """
+        if self.width is None and self.height is None:
+            return
+        ImageSourceUtil.check_frame_shape(self.width, self.height)
+
+    def _validate_zone(self, frame_width: int = None, frame_height: int = None):
+        """ 校验视频源区域配置
+
+        :param frame_width: 图像源原始宽度
+        :param frame_height:  图像源原始高度
+        """
+        if not self.zone:
+            return
+        if self.width and self.height:
+            self.zone.validate_shape(self.width, self.height)
+        elif frame_width and frame_height:
+            self.zone.validate_shape(frame_width, frame_height)
+
     def __getattr__(self, item):
         return getattr(self.zone, item)
 
 
-class ImageSourceWrapper():
+class ImageSourceWrapper(object):
     _image_source: BaseImageSource
 
     width: [int, None]
@@ -82,7 +118,7 @@ class ImageSourceWrapper():
         self._image_source = image_source
 
         self.zone = None
-        self.width, self.height = None, None
+        self.width, self.height = image_source.width, image_source.height
         if wrapper_config:
             self.__dict__.update(wrapper_config.__dict__)
 
