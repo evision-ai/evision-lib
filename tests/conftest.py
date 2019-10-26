@@ -8,5 +8,4 @@ from evision.lib.log.logconfig import Loggers
 
 # override default logger
 Loggers.DEFAULT = Loggers.TEST_DEFAULT
-SYSLOG_FACILITY = logging.handlers.SysLogHandler.LOG_LOCAL2
-logconfig.config('TEST', SYSLOG_FACILITY, logging.DEBUG, show_console=True)
+logconfig.config('TEST', {}, log_level=logging.DEBUG, show_console=True)

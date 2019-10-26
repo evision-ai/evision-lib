@@ -44,7 +44,7 @@ def test_single_vertex():
     assert len(vertex) == 2
 
     # __iter__
-    assert isinstance(vertex, collections.Iterable)
+    assert isinstance(vertex, collections.abc.Iterable)
 
     # times
     vertex = vertex.times(2)

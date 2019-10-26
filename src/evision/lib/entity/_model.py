@@ -40,7 +40,7 @@ class Vertex(object):
             return None
         elif isinstance(value, Vertex):
             return value
-        elif isinstance(value, collections.Sequence):
+        elif isinstance(value, collections.abc.Sequence):
             return Vertex(value[0], value[1])
         return None
 
@@ -146,8 +146,8 @@ class Zone(object):
 
     @bias.setter
     def bias(self, value):
-        assert isinstance(value, collections.Sized) and len(value) == 2
-        assert isinstance(value, collections.Iterable)
+        assert isinstance(value, collections.abc.Sized) and len(value) == 2
+        assert isinstance(value, collections.abc.Iterable)
         self.bias_x, self.bias_y = value
 
     @decorator.CachedProperty
