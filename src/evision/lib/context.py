@@ -8,9 +8,11 @@
 # @version: 1.0
 #
 
-from evision.lib.util import CacheUtil
 from tornado import gen
-from tornado.stack_context import StackContext, run_with_stack_context
+from tornado.stack_context import StackContext
+from tornado.stack_context import run_with_stack_context
+
+from evision.lib.util import CacheUtil
 
 __REQUEST_ID_LENGTH__ = 32
 

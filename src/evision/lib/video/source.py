@@ -314,8 +314,8 @@ class VideoCaptureSource(BaseImageSource):
             raise Exception('无法连接到摄像头/视频源，请检查')
 
         self.source = source_
-        self.frame_size = self.source.get(cv2.CAP_PROP_FRAME_WIDTH), \
-                          self.source.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.frame_size = (self.source.get(cv2.CAP_PROP_FRAME_WIDTH),
+                           self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.source.get(cv2.CAP_PROP_FPS)
         logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
                     self.source_config, self.source_type,
@@ -336,8 +336,7 @@ class VideoCaptureSource(BaseImageSource):
         """
         self.reset_failure_count()
         with self._lock:
-            if self.source.isOpened() \
-                and ImageSourceType.USB_CAMERA == self.source_type:
+            if self.source.isOpened() and ImageSourceType.USB_CAMERA == self.source_type:
                 self.source.release()
             source_ = self.validate_source(
                 self.source_config, self.source_type, release=False)

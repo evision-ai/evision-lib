@@ -67,12 +67,11 @@ class PathUtil(object):
 def print_vars():
     tmp = globals().copy()
     for k, v in sorted(tmp.items()):
-        if not k.startswith('_') \
-            and k != 'tmp' \
-            and k != 'In' \
-            and k != 'Out' \
-            and not hasattr(v, '__call__'):
-            print('{}:\t{}, type:{}'.format(k, v, type(v)))
+        if k.startswith('_') or hasattr(v, '__call'):
+            continue
+        if k in ('tmp', 'In', 'Out'):
+            continue
+        print('{}:\t{}, type:{}'.format(k, v, type(v)))
 
 
 if __name__ == '__main__':

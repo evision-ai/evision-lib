@@ -54,13 +54,11 @@ class HistoryRecorderMixin(object):
 
     def should_keep_recent(self, key):
         """是否保存近期历史"""
-        return key in self._last_seen_map \
-               and self.elapsed_from_last(key) < self.expiry_time
+        return key in self._last_seen_map and self.elapsed_from_last(key) < self.expiry_time
 
     def should_filter_recent(self, key):
         """是否应该丢弃近期历史"""
-        return key not in self._last_seen_map \
-               or self.elapsed_from_last(key) > self.expiry_time
+        return key not in self._last_seen_map or self.elapsed_from_last(key) > self.expiry_time
 
     def meet_frequency_requirement_by_value(self, key):
         """对象是否满足出现频率要求"""

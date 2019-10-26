@@ -22,7 +22,7 @@ def daemonize(pid_file, *, stdin='/dev/null',
     try:
         if os.fork() > 0:
             raise SystemExit(0)  # Parent exit
-    except OSError as e:
+    except OSError:
         raise RuntimeError('fork #1 failed.')
 
     os.chdir('/')
@@ -32,7 +32,7 @@ def daemonize(pid_file, *, stdin='/dev/null',
     try:
         if os.fork() > 0:
             raise SystemExit(0)
-    except OSError as e:
+    except OSError:
         raise RuntimeError('fork #2 failed.')
 
     # Flush I/O buffers

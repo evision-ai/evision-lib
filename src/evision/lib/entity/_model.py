@@ -159,8 +159,8 @@ class Zone(object):
         invalid_y = self.start_y < 0 and self.end_y > height
         if invalid_x or invalid_y:
             raise ValueError(
-                'Invalid zone config, start={}, size={}, frame size=[{}, {}]'
-                    .format(self.start_point, self.shape, width, height))
+                'Invalid zone config, start={}, size={}, frame size=[{}, {}]'.format(
+                    self.start_point, self.shape, width, height))
 
     def move(self, x, y):
         """移动区域"""

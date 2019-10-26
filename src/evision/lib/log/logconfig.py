@@ -52,7 +52,7 @@ class UTF8SafeFormatter(logging.Formatter):
         try:
             if isinstance(r, str):
                 r = bytes(r).decode(self.encoding, 'replace')  # Convert to unicode
-        except:
+        except Exception:
             if isinstance(r, bytes):
                 r = r.decode(self.encoding, 'replace')
         return r

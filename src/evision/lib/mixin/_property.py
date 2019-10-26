@@ -133,8 +133,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
         subclasses = TypeUtil.list_subclasses(cls)
         for subclass in subclasses:
             assert isinstance(subclass, PropertyHandlerMixin)
-            if not hasattr(subclass, 'handler_alias') \
-                or subclass.handler_alias is None:
+            if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
                 logger.info('Skip {} for no alias set', subclass)
                 continue
             _handler_classes[subclass.handler_alias] = subclass
@@ -152,8 +151,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
         for subclass in subclasses:
             if not TypeUtil.is_subclass(subclass, PropertyHandlerMixin):
                 continue
-            if not hasattr(subclass, 'handler_alias') \
-                or subclass.handler_alias is None:
+            if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
                 logger.info('Skip {} for no alias set', subclass)
                 continue
             _available_handlers[subclass.handler_alias] = {
