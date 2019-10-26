@@ -6,8 +6,7 @@
 # @author: Chen Shijiang(chenshijiang@evision.ai)
 # @date: 2019-10-16 19:30
 # @version: 1.0
-
-
+#
 import time
 
 import numpy as np
@@ -15,6 +14,11 @@ import numpy as np
 from evision.lib.log import LogHandlers, logutil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
+
+__all__ = [
+    'HistoryRecorderMixin',
+    'SimilarHistoryRecorderMixin'
+]
 
 
 class HistoryRecorderMixin(object):

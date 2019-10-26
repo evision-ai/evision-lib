@@ -15,6 +15,10 @@ from evision.lib.log import LogHandlers, logutil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
+__all__ = [
+    'BaseDao'
+]
+
 
 def _db_time_convert(info_map):
     return datetime.strptime(info_map['updated_at'], '%Y-%m-%d %H:%M:%S')

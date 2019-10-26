@@ -6,6 +6,10 @@ import os
 import sys
 from os import path as osp
 
+__all__ = [
+    'PathUtil'
+]
+
 
 class PathUtil(object):
     @staticmethod

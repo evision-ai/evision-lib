@@ -13,6 +13,10 @@ from webargs import core
 from webargs import tornadoparser
 from webargs.tornadoparser import TornadoParser
 
+__all__ = [
+    'parser'
+]
+
 
 def _get_value(d, name, field):
     """Handle gets from 'multidicts' made of lists
@@ -61,7 +65,3 @@ class ArgumentsParser(TornadoParser):
 
 
 parser = ArgumentsParser()
-
-__all__ = [
-    'parser'
-]

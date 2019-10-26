@@ -14,6 +14,11 @@ from tornado.stack_context import StackContext, run_with_stack_context
 
 __REQUEST_ID_LENGTH__ = 32
 
+__all__ = [
+    'RequestIdContext',
+    'with_request_id'
+]
+
 
 class RequestIdContext:
     class _Context:

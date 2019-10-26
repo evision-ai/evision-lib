@@ -15,6 +15,11 @@ import peewee
 
 from evision.lib.decorator import CachedProperty
 
+__all__ = [
+    'BaseModel',
+    'TimestampedModel'
+]
+
 
 class BaseModel(peewee.Model):
     """数据库表结构封装"""

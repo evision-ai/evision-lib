@@ -11,6 +11,10 @@ import cv2
 
 from evision.lib.entity import Vertex, Zone
 
+__all__ = [
+    'DrawUtil'
+]
+
 
 class DrawUtil(object):
     """OpenCV 图像处理接口封装"""

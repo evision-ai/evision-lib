@@ -5,6 +5,11 @@
 
 from fields import Fields
 
+__all__ = [
+    'Keys', 'ParamKey', 'Fields', 'Error', 'Status', 'Message',
+    'Suffix', 'DeploymentType'
+]
+
 
 # Request Keys
 class Keys(object):
@@ -158,9 +163,3 @@ class DeploymentType:
         DEV: 1,
         PROD: 2,
     }
-
-
-__all__ = [
-    'Keys', 'ParamKey', 'Fields', 'Error', 'Status', 'Message',
-    'Suffix', 'DeploymentType'
-]

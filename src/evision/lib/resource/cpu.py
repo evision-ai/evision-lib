@@ -7,9 +7,10 @@
 # @date: 2018-09-30 16:12
 # @version: 1.0
 #
-from evision.lib.log import logutil
 import os
 import sys
+
+from evision.lib.log import logutil
 
 try:
     import setproctitle as _setproctitle
@@ -51,21 +52,21 @@ def reserve(wanted_cores, queue):
     return cpu_list
 
 
-def select(cpu_list, all=False, name=None):
-    if not cpu_list and not all:
+def select(cpu_list, all_=False, name=None):
+    if not cpu_list and not all_:
         raise AttributeError('invalid cpu list: {}'.format(cpu_list))
-    if cpu_list and all:
+    if cpu_list and all_:
         raise AttributeError('invalid argument all=True when cpu list is not empty')
     if os.name == 'nt':
         return
     import ctypes
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     # System dependent, see e.g. /usr/include/x86_64-linux-gnu/asm/unistd_64.h
-    SYS_gettid = 186
-    pid = libc.syscall(SYS_gettid)
+    sys_gettid = 186
+    pid = libc.syscall(sys_gettid)
     import subprocess
     cmd = ['taskset']
-    cmd += ['-ap'] if all else [
+    cmd += ['-ap'] if all_ else [
         '-cp',
         ','.join(str(cpu) for cpu in cpu_list),
     ]
@@ -74,5 +75,5 @@ def select(cpu_list, all=False, name=None):
     if taskset.returncode != 0:
         logger.info('[set-cpu] #{} failed: {}'.format(name or get_proc_name(), taskset.returncode))
         return False
-    logger.info('[set-cpu] #{} succeed: {}'.format(name or get_proc_name(), 'all' if all else cpu_list))
+    logger.info('[set-cpu] #{} succeed: {}'.format(name or get_proc_name(), 'all' if all_ else cpu_list))
     return True

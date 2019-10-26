@@ -7,6 +7,10 @@
 # @date: 2019-10-12 14:48
 # @version: 1.0
 
+__all__ = [
+    'TypeUtil'
+]
+
 
 class TypeUtil(object):
     @staticmethod

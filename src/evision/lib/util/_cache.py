@@ -14,6 +14,10 @@ except ImportError:
 
     choices = lambda population, k: [choice(population) for _ in range(k)]
 
+__all__ = [
+    'CacheUtil'
+]
+
 
 class CacheUtil:
     @staticmethod

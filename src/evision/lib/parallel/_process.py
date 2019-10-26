@@ -16,6 +16,10 @@ from ._base import ParallelWrapperMixin
 
 logger = logutil.get_logger()
 
+__all__ = [
+    'ProcessWrapper'
+]
+
 
 class ProcessWrapper(ParallelWrapperMixin, Process):
     def __init__(self, name=None, paths=None,
@@ -29,6 +33,9 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
         self.answer_sigterm = answer_sigterm
 
         self._update_sys_path()
+
+    def process(self):
+        raise NotImplementedError
 
     def is_inited(self):
         return self.is_alive()

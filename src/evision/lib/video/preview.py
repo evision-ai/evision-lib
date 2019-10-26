@@ -15,6 +15,10 @@ from evision.lib.entity import ImageFrame, Vertex
 from evision.lib.util import DrawUtil
 from evision.lib.video import BaseImageSource, ImageSourceWrapper
 
+__all__ = [
+    'ImageSourcePreview'
+]
+
 
 class ImageSourcePreview(Thread):
     def __init__(self, source: [BaseImageSource, ImageSourceWrapper]):

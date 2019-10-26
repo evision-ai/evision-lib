@@ -12,6 +12,13 @@ import numpy as np
 
 from evision.lib import decorator
 
+__all__ = [
+    'Vertex', 'Vector',
+    'Zone',
+    'ImageFrame',
+    'Detection'
+]
+
 
 class Vertex(object):
     def __init__(self, x, y):

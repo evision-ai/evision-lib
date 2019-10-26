@@ -17,6 +17,11 @@ from evision.lib.util import TypeUtil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 
+__all__ = [
+    'SaveAndLoadConfigMixin',
+    'PropertyHandlerMixin'
+]
+
 
 class SaveAndLoadConfigMixin(object):
     """提供基于配置存储与新建实例的功能"""

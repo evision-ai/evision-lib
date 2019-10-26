@@ -9,6 +9,10 @@
 #
 import sys
 
+__all__ = [
+    'SysUtil'
+]
+
 
 class SysUtil(object):
     @staticmethod

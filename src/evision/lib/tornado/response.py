@@ -20,6 +20,12 @@ from evision.lib.log import logutil
 
 logger = logutil.get_logger()
 
+__all__ = [
+    'Response',
+    'ServerException',
+    'handle_exception'
+]
+
 
 class Response(object):
     """请求响应结构"""
@@ -65,7 +71,7 @@ def _stack_context_handle_exception(type, value, traceback, handler):
     elif isinstance(value, Exception):
         app_logger.error("%s" % str(value), exc_info=True)
         handler.write(Response(500, message=str(value)))
-    ## make request finish
+    # make request finish
     handler.finish()
     return True
 

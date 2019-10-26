@@ -14,11 +14,18 @@ from ._base import ParallelWrapperMixin
 
 logger = logutil.get_logger()
 
+__all__ = [
+    'ThreadWrapper'
+]
+
 
 class ThreadWrapper(ParallelWrapperMixin, Thread):
     def __init__(self, name=None, *args, **kwargs):
         Thread.__init__(self, name=name, args=args, kwargs=kwargs)
         ParallelWrapperMixin.__init__(self, *args, **kwargs)
+
+    def process(self):
+        raise NotImplementedError
 
     def stop(self):
         if self._ended:

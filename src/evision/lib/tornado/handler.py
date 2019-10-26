@@ -15,6 +15,11 @@ from evision.lib.tornado.response import Response
 
 logger = logutil.get_logger()
 
+__all__ = [
+    'BaseHandler',
+    'TestIndexHandler'
+]
+
 
 class BaseHandler(tornado.web.RequestHandler):
     """A class to collect common handler methods - all other handlers should

@@ -15,6 +15,11 @@ from os import path as osp
 
 from evision.lib.decorator import Singleton
 
+__all__ = [
+    'ConfigSection',
+    'EvisionConfig'
+]
+
 
 class ConfigSection(object):
     """主要配置section"""

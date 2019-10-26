@@ -11,6 +11,10 @@ import base64
 
 import peewee
 
+__all__ = [
+    'CompatibleBlobField'
+]
+
 
 class CompatibleBlobField(peewee.BlobField):
     """二进制列封装"""
