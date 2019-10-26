@@ -149,3 +149,6 @@ class ImageSourceWrapper(object):
                                    frame, self.zoom_ratio, self.zone)
                         for frame in frames]
         return image_frames[0] if n_frame == 1 else image_frames
+
+    def is_alive(self):
+        return self._image_source.is_alive()

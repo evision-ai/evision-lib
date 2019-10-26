@@ -125,11 +125,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         """图像源工作进程"""
         image_frame = self.read_frame()
         if image_frame is None:
-            if self.frame_interval:
-                logger.debug('[{}] Read no frame, waiting for {:.3f}s',
-                             self.name, self.frame_interval)
-                time.sleep(self.frame_interval)
+            self.on_empty_frame()
+            return
 
+        self.reset_failure_count()
         try:
             if self._frame_queue.full():
                 self._frame_queue.get_nowait()
@@ -139,6 +138,22 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         except queue.Full:
             pass
 
+    def read_frame(self):
+        """
+        :return: 图像帧
+        """
+        raise NotImplementedError
+
+    def on_empty_frame(self):
+        """读取空帧时的处理方式"""
+        self.accumulate_failure_count()
+        self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
+
+        if self.frame_interval:
+            logger.debug('[{}] Read no frame, waiting for {:.3f}s',
+                         self.name, self.frame_interval)
+            time.sleep(self.frame_interval)
+
     @staticmethod
     def validate_source(source_config, source_type, release=True):
         """验证视频源是否有效
@@ -147,12 +162,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         :param source_type 图像源类型
         :param release 图像源校验完成后是否释放资源
         :return 校验通过的图像源
-        """
-        raise NotImplementedError
-
-    def read_frame(self):
-        """
-        :return: 图像帧
         """
         raise NotImplementedError
 
@@ -317,11 +326,7 @@ class VideoCaptureSource(BaseImageSource):
         with self._lock:
             ret, camera_frame = self.source.read()
             if not ret or np.all(camera_frame == 0):
-                self.accumulate_failure_count()
-                self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
-                time.sleep(self.frame_interval)
                 return None
-            self.reset_failure_count()
             return camera_frame
 
     def reload_source(self):
@@ -348,3 +353,9 @@ class VideoCaptureSource(BaseImageSource):
         if self.source and self.source.isOpened():
             self.source.release()
             del self.source
+
+
+class VideoFileImageSource(VideoCaptureSource):
+    def on_empty_frame(self):
+        logger.info('Finish reading {} with {} frames', self.source_config, self.ticks)
+        self.stop()
