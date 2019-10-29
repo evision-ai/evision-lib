@@ -56,7 +56,7 @@ setup(
         # 'Programming Language :: Python :: Implementation :: IronPython',
         # 'Programming Language :: Python :: Implementation :: Jython',
         # 'Programming Language :: Python :: Implementation :: Stackless',
-        'Topic :: Utilities',
+        'Topic :: Software Development :: Libraries :: Python Modules',
         "License :: OSI Approved :: GNU General Public License (GPL)",
     ],
     project_urls={
