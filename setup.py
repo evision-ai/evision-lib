@@ -32,11 +32,12 @@ setup(
     author='eVision.AI',
     author_email='lib@evision.ai',
     url='https://github.com/evision-ai/evision-lib',
-    packages=find_namespace_packages('src', include=['evision.*']),
+    packages=find_namespace_packages('src', include=['evision.*'],
+                                     exclude=['ez_setup', 'tests', 'tests.*']),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     include_package_data=True,
-    license="",
+    license="GPLv3",
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -56,7 +57,7 @@ setup(
         # 'Programming Language :: Python :: Implementation :: Jython',
         # 'Programming Language :: Python :: Implementation :: Stackless',
         'Topic :: Utilities',
-        'Private :: Do Not Upload',
+        "License :: OSI Approved :: GNU General Public License (GPL)",
     ],
     project_urls={
         'Documentation': 'https://evision-lib.readthedocs.io/',
@@ -64,9 +65,9 @@ setup(
         'Issue Tracker': 'https://github.com/dectinc/evision-lib/issues',
     },
     keywords=[
-        # eg: 'keyword1', 'keyword2', 'keyword3',
+        'evision', 'library', 'computer vision', 'rtsp'
     ],
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    python_requires='!=2.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=[
         'tornado>=5.0.0',
         'opencv-python',
