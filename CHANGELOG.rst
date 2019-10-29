@@ -2,6 +2,14 @@
 Changelog
 =========
 
+0.1.1 (2019-10-29)
+------------------
+
+* Image source connection and distribution
+* Parallel wrapper
+* Hardware resource management
+* Utilities
+
 0.1.0 (2019-10-11)
 ------------------
 
