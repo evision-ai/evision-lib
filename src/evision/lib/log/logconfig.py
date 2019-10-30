@@ -94,9 +94,12 @@ def config(syslog_tag, loggers, log_level=logging.INFO, log_dir=None, show_conso
             'level': 'INFO',
             'when': 'midnight',
             'backupCount': 30,
-            'formatter': 'tornado',
+            'formatter': 'tornado-plain',
             'filename': get_log_file(name, extra)
         }
+
+    def format_tag(tag):
+        return f'[{tag}] ' if tag else ''
 
     base_fmt = '[{levelname} {asctime}.{msecs:.03d} {filename}s:{lineno} - {funcName}] {message}'
     base_handlers = [LogHandlers.CONSOLE, LogHandlers.DEFAULT] \
@@ -121,9 +124,16 @@ def config(syslog_tag, loggers, log_level=logging.INFO, log_dir=None, show_conso
                 '()': TornadoLogFormatter,
                 'color': True,
                 'datefmt': '%y-%m-%d %H:%M:%S',
-                'format': '[%(asctime)s.%(msecs).03d] [{}] %(color)s[%(levelname)s] [%(filename)s:%(lineno)d - '
-                          '%(funcName)s]%(end_color)s %(message)s'.format(syslog_tag)
+                'format': f'[%(asctime)s.%(msecs).03d] {format_tag(syslog_tag)}%(color)s[%(levelname)s] '
+                          f'[%(filename)s:%(lineno)d - %(funcName)s]%(end_color)s %(message)s'
             },
+            'tornado-plain': {
+                '()': TornadoLogFormatter,
+                'color': True,
+                'datefmt': '%y-%m-%d %H:%M:%S',
+                'format': f'[%(asctime)s.%(msecs).03d] {format_tag(syslog_tag)}[%(levelname)s] '
+                          f'[%(filename)s:%(lineno)d - %(funcName)s] %(message)s'
+            }
         },
         'handlers': {
             LogHandlers.NULL: {
