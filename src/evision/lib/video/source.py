@@ -252,11 +252,11 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         }
 
     @property
-    def type_and_source(self):
+    def uri_and_type(self):
         if self.source_uri is None or self.source_type is None:
             raise ValueError('Invalid video source={} or type={}'.format(
                 self.source_uri, self.source_type))
-        return '{}-{}'.format(self.source_type.value, self.source_uri)
+        return (self.source_uri, self.source_type)
 
     def set_name_description(self, name, description):
         if self.name == name and self.description == description:

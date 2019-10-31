@@ -38,11 +38,16 @@ class ArgusApplication(ProcessWrapper):
     __require_image_source__ = True
 
     @staticmethod
-    def construct(source: BaseImageSource, config: ArgusApplicationConfig):
-        return ArgusApplication(
-            ImageSourceWrapper(source, config.source_wrapper_config),
-            config.frame_batch, config.name, config.paths,
-            **config.extra)
+    def construct(config: ArgusApplicationConfig,
+                  source: BaseImageSource = None,
+                  wrapper: ImageSourceWrapper = None):
+        if not source and not wrapper:
+            raise ValueError('Image source not configured for argus application')
+        if not wrapper:
+            wrapper = ImageSourceWrapper(source, config.source_wrapper_config)
+        return ArgusApplication(wrapper, config.frame_batch,
+                                config.name, config.paths,
+                                **config.extra)
 
     def __init__(self, source_wrapper: ImageSourceWrapper, frame_batch: int = 1,
                  name: str = None, paths: Union[str, list, None] = None,
@@ -51,10 +56,6 @@ class ArgusApplication(ProcessWrapper):
         self.frame_batch = frame_batch
 
         super().__init__(name, paths, answer_sigint, answer_sigterm, *args, **kwargs)
-
-    @property
-    def source_id(self):
-        return None if not self.source else self.source.source_id
 
     def process(self):
         """应用通过重载本方法实现功能"""

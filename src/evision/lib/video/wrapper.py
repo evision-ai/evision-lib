@@ -157,3 +157,7 @@ class ImageSourceWrapper(object):
     @property
     def source_id(self):
         return self._image_source.source_id
+
+    @property
+    def uri_and_type(self):
+        return self._image_source.uri_and_type
