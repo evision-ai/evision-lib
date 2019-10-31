@@ -8,7 +8,7 @@
 # @version: 1.0
 
 from .base import ImageSourceType, ImageSourceUtil
-from .source import BaseImageSource, VideoCaptureSource
+from .source import BaseImageSource, VideoCaptureSource, ImageSourceConfig
 from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper
 
 from .preview import ImageSourcePreview

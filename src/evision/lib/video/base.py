@@ -7,7 +7,7 @@
 # @date: 2019-10-18 10:29
 # @version: 1.0
 #
-from enum import Enum
+from enum import IntEnum
 
 from evision.lib.log import logutil
 
@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-class ImageSourceType(Enum):
+class ImageSourceType(IntEnum):
     """ Identify video source type
     """
     # 网络摄像头
@@ -35,16 +35,6 @@ class ImageSourceType(Enum):
     # 图片文件
     IMAGE_FILE = 6
 
-    def equals(self, value):
-        if value is None:
-            return False
-        elif isinstance(value, int):
-            return self.value == value
-        elif isinstance(value, ImageSourceType):
-            return self.value == value.value
-        else:
-            return False
-
 
 class ImageSourceUtil(object):
     DEFAULT_TYPE = ImageSourceType.IP_CAMERA
@@ -53,14 +43,9 @@ class ImageSourceUtil(object):
     def parse_source_config(cls, source_, type_):
         """根据来源和来源类型获取图像源信息"""
         # video source setting
-        if type_ is None:
-            type_ = cls.DEFAULT_TYPE
-        elif isinstance(type_, int):
-            type_ = ImageSourceType(type_)
-        elif not isinstance(type_, ImageSourceType):
-            raise ValueError('Invalid video source type={}'.format(type_))
+        type_ = cls.DEFAULT_TYPE if type_ is None else ImageSourceType(type_)
 
-        if ImageSourceType.USB_CAMERA.equals(type_) and not isinstance(source_, int):
+        if ImageSourceType.USB_CAMERA == type_ and not isinstance(source_, int):
             source_ = int(source_)
 
         logger.info('Video source=[{}], type=[{}]', source_, type_)
