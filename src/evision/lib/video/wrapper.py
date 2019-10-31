@@ -7,9 +7,10 @@
 # @date: 2019-10-25 16:24
 # @version: 1.0
 #
-from evision.lib.log import logutil
+from typing import Union
 
-from evision.lib.entity import Zone, ImageFrame
+from evision.lib.entity import ImageFrame, Zone
+from evision.lib.log import logutil
 from evision.lib.video import BaseImageSource, ImageSourceUtil
 
 logger = logutil.get_logger()
@@ -25,7 +26,7 @@ class ImageSourceWrapperConfig(object):
     """
     width: int
     height: int
-    zone: [Zone, None]
+    zone: Union[Zone, None]
 
     def __init__(self, width: int, height: int,
                  zone_start_x: int = 0, zone_start_y: int = 0,
@@ -103,9 +104,9 @@ class ImageSourceWrapperConfig(object):
 class ImageSourceWrapper(object):
     _image_source: BaseImageSource
 
-    width: [int, None]
-    height: [int, None]
-    zone: [Zone, None]
+    width: Union[int, None]
+    height: Union[int, None]
+    zone: Union[Zone, None]
 
     def __init__(self, image_source: BaseImageSource,
                  wrapper_config: ImageSourceWrapperConfig = None):
@@ -152,3 +153,7 @@ class ImageSourceWrapper(object):
 
     def is_alive(self):
         return self._image_source.is_alive()
+
+    @property
+    def source_id(self):
+        return self._image_source.source_id

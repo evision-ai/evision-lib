@@ -7,12 +7,14 @@
 # @version: 1.0
 #
 import queue
-import time
 from queue import Queue
 from threading import RLock
+import time
+from typing import Union
 
 import cv2
 import numpy as np
+from pydantic import BaseModel
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
@@ -25,15 +27,36 @@ logger = logutil.get_logger()
 
 __all__ = [
     'BaseImageSource',
+    'ImageSourceConfig',
     'VideoCaptureSource'
 ]
+
+
+class ImageSourceConfig(BaseModel):
+    source: Union[str, int]
+    source_type: Union[ImageSourceType, int]
+    source_id: str = None
+    width: int = None
+    height: int = None
+    fps: int = 5
+    frame_queue_size: int = 24
+    name: str = None
+    description: str = None
+    extra: dict = {}
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     _MAX_FAIL_TIMES = 100
 
-    def __init__(self, source: [str, int] = None,
-                 source_type: [ImageSourceType, int] = None,
+    @staticmethod
+    def construct(config: ImageSourceConfig):
+        return BaseImageSource(config.source, config.source_type, config.source_id,
+                               config.width, config.height, config.fps, config.frame_queue_size,
+                               config.name, config.description,
+                               **config.extra)
+
+    def __init__(self, source: Union[str, int] = None,
+                 source_type: Union[ImageSourceType, int] = None,
                  source_id: str = None,
                  width: int = None, height: int = None, fps: int = 5,
                  frame_queue_size: int = 24,
