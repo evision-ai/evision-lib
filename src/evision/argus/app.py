@@ -9,12 +9,25 @@
 # @date: 2019-10-30 14:26
 # @version: 1.0
 #
-from evision.lib.log import logutil
+from typing import Union
 
+from pydantic import BaseModel
+
+from evision.lib.log import logutil
 from evision.lib.parallel import ProcessWrapper
-from evision.lib.video import ImageSourceWrapper
+from evision.lib.video import BaseImageSource, ImageSourceConfig
+from evision.lib.video import ImageSourceWrapper, ImageSourceWrapperConfig
 
 logger = logutil.get_logger()
+
+
+class ArgusApplicationConfig(BaseModel):
+    image_source_config: ImageSourceConfig
+    source_wrapper_config: ImageSourceWrapperConfig = None
+    frame_batch: int = 1
+    name: str = None
+    paths: Union[str, list, None] = None
+    extra: dict = None
 
 
 class ArgusApplication(ProcessWrapper):
@@ -24,8 +37,15 @@ class ArgusApplication(ProcessWrapper):
     # 是否必须配置数据源，在启动应用时检查
     __require_image_source__ = True
 
+    @staticmethod
+    def construct(source: BaseImageSource, config: ArgusApplicationConfig):
+        return ArgusApplication(
+            ImageSourceWrapper(source, config.source_wrapper_config),
+            config.frame_batch, config.name, config.paths,
+            **config.extra)
+
     def __init__(self, source_wrapper: ImageSourceWrapper, frame_batch: int = 1,
-                 name: str = None, paths: [str, list, None] = None,
+                 name: str = None, paths: Union[str, list, None] = None,
                  answer_sigint: bool = False, answer_sigterm: bool = False, *args, **kwargs):
         self.source = source_wrapper
         self.frame_batch = frame_batch
