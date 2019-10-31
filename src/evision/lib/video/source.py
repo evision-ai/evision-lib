@@ -7,9 +7,9 @@
 # @version: 1.0
 #
 import queue
-from queue import Queue
-from threading import RLock
 import time
+from queue import Queue
+from threading import Lock, RLock
 from typing import Union
 
 import cv2
@@ -39,7 +39,7 @@ class ImageSourceConfig(BaseModel):
     source_id: str = None
     width: int = None
     height: int = None
-    fps: int = 5
+    fps: float = 24
     frame_queue_size: int = 24
     name: str = None
     description: str = None
@@ -49,17 +49,17 @@ class ImageSourceConfig(BaseModel):
 class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     _MAX_FAIL_TIMES = 100
 
-    @staticmethod
-    def construct(config: ImageSourceConfig):
-        return BaseImageSource(config.source_uri, config.source_type, config.source_id,
-                               config.width, config.height, config.fps, config.frame_queue_size,
-                               config.name, config.description,
-                               **config.extra)
+    @classmethod
+    def construct(cls, config: ImageSourceConfig):
+        return cls(config.source_uri, config.source_type, config.source_id,
+                   config.width, config.height, config.fps, config.frame_queue_size,
+                   config.name, config.description,
+                   **config.extra)
 
     def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,
                  source_id: str = None,
-                 width: int = None, height: int = None, fps: int = 5,
+                 width: int = None, height: int = None, fps: float = 5,
                  frame_queue_size: int = 24,
                  name: str = None, description: str = None, **kwargs):
         FailureCountMixin.__init__(self)
@@ -67,13 +67,14 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
         self.__image_source_inited = False
         self._lock = RLock()
+        self.read_lock = Lock()
 
         # 需要在初始化图像源信息时更新
         self.width, self.height = None, None
         self.frame_size = width, height
 
         # 图像源 FPS
-        self._fps, self._frame_interval = None, None
+        self._fps = None
         self.fps = fps
 
         # 图像源地址及类型
@@ -83,7 +84,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         self.source = None
 
         ThreadWrapper.__init__(self, exclusive_init_lock=self._lock, name=name,
-                               **kwargs)
+                               interval=self.interval, **kwargs)
 
         self._frame_queue = Queue(frame_queue_size)
 
@@ -119,7 +120,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
             return None
         return self.current(block=False)
 
-    def current(self, n_frame=1, block=True, timeout=1):
+    def current(self, n_frame=1, block=True, timeout=60):
         """获取当前队列中最新的 {n_frame} 帧图像
 
         :param n_frame: 需要获取的帧数目
@@ -139,7 +140,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
                 if self._frame_queue.qsize() >= n_frame:
                     # NOTE: 可能取到少于 n_frame 帧图像，不做处理
                     return [self._frame_queue.queue[i] for i in range(n_frame)]
-                time.sleep(self.frame_interval * (n_frame - self._frame_queue.qsize()))
+                time.sleep(self.interval * (n_frame - self._frame_queue.qsize()))
             return None
         except queue.Empty:
             logger.warn('Failed getting current image frame with empty queue')
@@ -173,10 +174,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         self.accumulate_failure_count()
         self.try_restore(self._MAX_FAIL_TIMES, self.reload_source)
 
-        if self.frame_interval:
+        if self.interval:
             logger.debug('[{}] Read no frame, waiting for {:.3f}s',
-                         self.name, self.frame_interval)
-            time.sleep(self.frame_interval)
+                         self.name, self.interval)
+            time.sleep(self.interval)
 
     @staticmethod
     def validate_source(source_uri, source_type, release=True):
@@ -213,10 +214,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     def fps(self):
         return self._fps
 
-    @property
-    def frame_interval(self):
-        return self._frame_interval
-
     @fps.setter
     def fps(self, fps: [int, None] = None):
         """更新图像源帧率及帧间隔"""
@@ -228,10 +225,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         if not fps and fps < 1:
             raise ValueError('Invalid FPS setting')
         self._fps = fps
-        self._frame_interval = float(1) / self._fps
+        self.interval = float(1) / self._fps
         if self.__image_source_inited:
             logger.info('[{}] Set fps={}, frame interval={}',
-                        self.alias, self.fps, self.frame_interval)
+                        self.alias, self.fps, self.interval)
 
     @property
     def alias(self):
@@ -379,6 +376,14 @@ class VideoCaptureSource(BaseImageSource):
 
 
 class VideoFileImageSource(VideoCaptureSource):
+    def __init__(self, endless=False, **kwargs):
+        super().__init__(**kwargs)
+        self.endless = endless
+
     def on_empty_frame(self):
         logger.info('Finish reading {} with {} frames', self.source_uri, self.ticks)
-        self.stop()
+        if not self.endless:
+            self.stop()
+        else:
+            logger.debug('Reloading source={}, status={}', self.source_uri, self.is_alive())
+            self.reload_source()

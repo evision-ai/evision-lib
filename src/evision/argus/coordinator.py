@@ -49,15 +49,17 @@ class DictImageSourceCoordinator(ImageSourceCoordinator):
     __source_map: Dict[(Union[str, int], ImageSourceType), BaseImageSource]
 
     def __init__(self):
+        self.__source_map = dict()
         self.__lock = Lock()
 
-    def register(self, image_source_config: ImageSourceConfig) -> BaseImageSource:
+    def register(self, image_source_config: ImageSourceConfig,
+                 clazz: type = BaseImageSource) -> BaseImageSource:
         source_uri, source_type = ImageSourceUtil.parse_source_config(
             image_source_config.source_uri, image_source_config.source_type)
         source_key = (source_uri, source_type)
         with self.__lock:
             if source_key not in self.__source_map:
-                source = BaseImageSource.construct(image_source_config)
+                source = clazz.construct(image_source_config)
                 self.__source_map[source_key] = source
         return self.__source_map[source_key]
 
