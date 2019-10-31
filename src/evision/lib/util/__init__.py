@@ -8,7 +8,8 @@
 # @version: 1.0
 
 from ._cache import CacheUtil
-from ._path import PathUtil
-from ._type import TypeUtil
-from ._sys import SysUtil
+from ._collection import DictUtil
 from ._draw import DrawUtil
+from ._path import PathUtil
+from ._sys import SysUtil
+from ._type import TypeUtil
