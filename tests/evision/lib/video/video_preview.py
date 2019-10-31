@@ -31,25 +31,25 @@ def _open_image_source(source):
 
 
 def with_ip_camera():
-    source_config = 'rtsp://admin:password@192.100.1.134:554/h264/ch1/main/av_stream'
+    source_uri = 'rtsp://admin:password@192.100.1.134:554/h264/ch1/main/av_stream'
     source_type = ImageSourceType.IP_CAMERA
-    source = VideoCaptureSource(source=source_config, source_type=source_type)
+    source = VideoCaptureSource(source=source_uri, source_type=source_type)
     _open_image_source(source)
 
 
 def with_usb_camera():
-    source_config = 0
+    source_uri = 0
     source_type = ImageSourceType.USB_CAMERA
-    source = VideoCaptureSource(source=source_config, source_type=source_type,
+    source = VideoCaptureSource(source=source_uri, source_type=source_type,
                                 width=width, height=height)
     _open_image_source(source)
 
 
 def with_video_file():
     import os
-    source_config = os.path.expanduser('~/Downloads/test.avi')
+    source_uri = os.path.expanduser('~/Downloads/test.avi')
     source_type = ImageSourceType.VIDEO_FILE
-    source = VideoFileImageSource(source_config, source_type)
+    source = VideoFileImageSource(source_uri, source_type)
     _open_image_source(source)
 
 

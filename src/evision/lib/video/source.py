@@ -28,12 +28,13 @@ logger = logutil.get_logger()
 __all__ = [
     'BaseImageSource',
     'ImageSourceConfig',
-    'VideoCaptureSource'
+    'VideoCaptureSource',
+    'VideoFileImageSource'
 ]
 
 
 class ImageSourceConfig(BaseModel):
-    source: Union[str, int]
+    source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
     source_id: str = None
     width: int = None
@@ -50,12 +51,12 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @staticmethod
     def construct(config: ImageSourceConfig):
-        return BaseImageSource(config.source, config.source_type, config.source_id,
+        return BaseImageSource(config.source_uri, config.source_type, config.source_id,
                                config.width, config.height, config.fps, config.frame_queue_size,
                                config.name, config.description,
                                **config.extra)
 
-    def __init__(self, source: Union[str, int] = None,
+    def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,
                  source_id: str = None,
                  width: int = None, height: int = None, fps: int = 5,
@@ -76,8 +77,8 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         self.fps = fps
 
         # 图像源地址及类型
-        self.source_config, self.source_type = \
-            ImageSourceUtil.parse_source_config(source, source_type)
+        self.source_uri, self.source_type = \
+            ImageSourceUtil.parse_source_config(source_uri, source_type)
         # 图像源，如 VideoCapture、File、HttpRequest
         self.source = None
 
@@ -94,7 +95,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         logger.info('{}[{}] inited, source={}, type={}, frame size={}, fps={}, '
                     'name={}, description={}',
                     self.__class__.__name__, self.source_id,
-                    self.source_config, self.source_type,
+                    self.source_uri, self.source_type,
                     self.frame_size, self.fps,
                     self.name, self.description)
         self.__image_source_inited = True
@@ -178,10 +179,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
             time.sleep(self.frame_interval)
 
     @staticmethod
-    def validate_source(source_config, source_type, release=True):
+    def validate_source(source_uri, source_type, release=True):
         """验证视频源是否有效
-        对应参数： source_config、source_type
-        :param source_config 图像源配置地址
+        对应参数： source_uri、source_type
+        :param source_uri 图像源配置地址
         :param source_type 图像源类型
         :param release 图像源校验完成后是否释放资源
         :return 校验通过的图像源
@@ -234,7 +235,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @property
     def alias(self):
-        return self.name if self.name else str(self.source_config)
+        return self.name if self.name else str(self.source_uri)
 
     @property
     def config_section(self):
@@ -244,7 +245,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     def info(self):
         return {
             Keys.ID: self.source_id,
-            Keys.SOURCE: self.source_config,
+            Keys.SOURCE: self.source_uri,
             Keys.TYPE: self.source_type.value,
             Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description
@@ -252,10 +253,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @property
     def type_and_source(self):
-        if self.source_config is None or self.source_type is None:
+        if self.source_uri is None or self.source_type is None:
             raise ValueError('Invalid video source={} or type={}'.format(
-                self.source_config, self.source_type))
-        return '{}-{}'.format(self.source_type.value, self.source_config)
+                self.source_uri, self.source_type))
+        return '{}-{}'.format(self.source_type.value, self.source_uri)
 
     def set_name_description(self, name, description):
         if self.name == name and self.description == description:
@@ -286,7 +287,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
             else self.source_type
 
         return {
-            Keys.SOURCE: self.source_config,
+            Keys.SOURCE: self.source_uri,
             Keys.TYPE: _source_type,
             Keys.WIDTH: self.width,
             Keys.HEIGHT: self.height,
@@ -306,21 +307,21 @@ class VideoCaptureSource(BaseImageSource):
     source: cv2.VideoCapture
 
     @staticmethod
-    def validate_source(source_config, source_type, release=True):
-        source_config, source_type = ImageSourceUtil.parse_source_config(
-            source_config, source_type)
+    def validate_source(source_uri, source_type, release=True):
+        source_uri, source_type = ImageSourceUtil.parse_source_config(
+            source_uri, source_type)
         """验证VideoCapture对象是否有效"""
-        source_ = cv2.VideoCapture(source_config)
+        source_ = cv2.VideoCapture(source_uri)
         if not source_.isOpened():
             logger.warning('Failed connecting to camera=[{}], type={}',
-                           source_config, source_type)
+                           source_uri, source_type)
             return None
 
         ret, frame = source_.read()
 
         if not ret:
             logger.warning('Camera[{}, type={}] opened but failed getting frame',
-                           source_config, source_type)
+                           source_uri, source_type)
             return None
 
         if release:
@@ -331,7 +332,7 @@ class VideoCaptureSource(BaseImageSource):
 
     def on_start(self):
         """创建VideoCapture对象"""
-        source_ = self.validate_source(self.source_config, self.source_type,
+        source_ = self.validate_source(self.source_uri, self.source_type,
                                        release=False)
         if source_ is None or not source_.isOpened():
             raise Exception('无法连接到摄像头/视频源，请检查')
@@ -341,7 +342,7 @@ class VideoCaptureSource(BaseImageSource):
                            self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.source.get(cv2.CAP_PROP_FPS)
         logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
-                    self.source_config, self.source_type,
+                    self.source_uri, self.source_type,
                     self.frame_size, self.fps)
 
     def read_frame(self):
@@ -362,7 +363,7 @@ class VideoCaptureSource(BaseImageSource):
             if self.source.isOpened() and ImageSourceType.USB_CAMERA == self.source_type:
                 self.source.release()
             source_ = self.validate_source(
-                self.source_config, self.source_type, release=False)
+                self.source_uri, self.source_type, release=False)
             if source_ is None or not source_.isOpened():
                 raise Exception('Failed initialized video source={}'.format(
                     self.source))
@@ -379,5 +380,5 @@ class VideoCaptureSource(BaseImageSource):
 
 class VideoFileImageSource(VideoCaptureSource):
     def on_empty_frame(self):
-        logger.info('Finish reading {} with {} frames', self.source_config, self.ticks)
+        logger.info('Finish reading {} with {} frames', self.source_uri, self.ticks)
         self.stop()
