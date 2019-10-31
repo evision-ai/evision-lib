@@ -7,9 +7,7 @@
 # @date: 2019-10-18 10:34
 # @version: 1.0
 #
-import os
 import signal
-import time
 from multiprocessing import Process
 
 from evision.lib.log import logutil
@@ -45,13 +43,6 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
         if self.answer_sigterm:
             signal.signal(signal.SIGINT, self._sig_kill_handler)
             signal.signal(signal.SIGTERM, self._sig_kill_handler)
-
-    def stop(self):
-        super().stop()
-        time.sleep(1)
-        if not self.ended:
-            # kill
-            os.kill(self.pid, signal.SIGTERM)
 
     def _sig_kill_handler(self, sig, frame):
         logger.info('[{}] Stopping with signal={}, frame={}',

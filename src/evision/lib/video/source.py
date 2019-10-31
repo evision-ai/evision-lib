@@ -51,9 +51,11 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
     @classmethod
     def construct(cls, config: ImageSourceConfig):
-        return cls(config.source_uri, config.source_type, config.source_id,
-                   config.width, config.height, config.fps, config.frame_queue_size,
-                   config.name, config.description,
+        return cls(source_uri=config.source_uri, source_type=config.source_type,
+                   source_id=config.source_id,
+                   width=config.width, height=config.height,
+                   fps=config.fps, frame_queue_size=config.frame_queue_size,
+                   name=config.name, description=config.description,
                    **config.extra)
 
     def __init__(self, source_uri: Union[str, int] = None,
@@ -376,9 +378,9 @@ class VideoCaptureSource(BaseImageSource):
 
 
 class VideoFileImageSource(VideoCaptureSource):
-    def __init__(self, endless=False, **kwargs):
+    def __init__(self, **kwargs):
+        self.endless = kwargs.pop('endless') if 'endless' in kwargs else False
         super().__init__(**kwargs)
-        self.endless = endless
 
     def on_empty_frame(self):
         logger.info('Finish reading {} with {} frames', self.source_uri, self.ticks)

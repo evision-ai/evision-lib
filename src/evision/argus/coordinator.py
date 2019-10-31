@@ -36,7 +36,8 @@ class ImageSourceCoordinator(object):
         raise NotImplementedError
 
     def remove_all(self):
-        for source_key in self.source_keys:
+        keys = list(self.source_keys)
+        for source_key in keys:
             self.remove(source_key)
 
     @property
@@ -88,15 +89,17 @@ class ArgusCoordinator(ProcessWrapper):
 
         self.__lock = Lock()
 
-    def add(self, app_config: ArgusApplicationConfig) -> ArgusApplication:
-        image_source = self.__source_coordinator.register(app_config.image_source_config)
+    def add(self, app_config: ArgusApplicationConfig,
+            app_type: type = ArgusApplication, source_type: type = BaseImageSource) -> ArgusApplication:
+        image_source = self.__source_coordinator.register(app_config.image_source_config, source_type)
         source_wrapper = ImageSourceWrapper(image_source, app_config.source_wrapper_config)
-        app = ArgusApplication.construct(app_config, wrapper=source_wrapper)
+        app = app_type.construct(app_config, wrapper=source_wrapper)
 
         with self.__lock:
             if not image_source.running:
-                image_source.setDaemon(True)
-                image_source.start()
+                with image_source.read_lock:
+                    image_source.setDaemon(True)
+                    image_source.start()
             app.daemon = True
             app.start()
             self.__dispatches[image_source.uri_and_type].append(app)
@@ -125,11 +128,19 @@ class ArgusCoordinator(ProcessWrapper):
     def stop(self):
         super().stop()
         with self.__lock:
-            for source_config, apps in self.__dispatches:
+            for source_config, apps in self.__dispatches.items():
                 for app in apps:
                     assert isinstance(app, ArgusApplication)
                     app.stop()
             self.__source_coordinator.remove_all()
+
+    @property
+    def n_image_sources(self):
+        return len(self.__source_coordinator.source_keys)
+
+    @property
+    def n_apps(self):
+        return sum(len(v) for v in self.__dispatches.values())
 
 
 __all__ = [
