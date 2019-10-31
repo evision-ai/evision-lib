@@ -7,6 +7,6 @@
 # @date: 2019-10-16 19:28
 # @version: 1.0
 
-from ._property import SaveAndLoadConfigMixin
+from ._property import SaveAndLoadConfigMixin, PropertyHandlerMixin
 from ._record import HistoryRecorderMixin, SimilarHistoryRecorderMixin
 from ._task import FailureCountMixin
