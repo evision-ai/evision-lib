@@ -173,5 +173,9 @@ class ParallelWrapperMixin(object):
         return self._ended
 
     @property
+    def running(self):
+        return self._running
+
+    @property
     def ticks(self):
         return self.__tick.value
