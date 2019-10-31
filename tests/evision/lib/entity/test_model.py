@@ -133,7 +133,7 @@ def test_no_zoom_frame():
     padding = 30
     zone = Zone(padding, padding,
                 end_x=width - padding, end_y=height - padding)
-    frame = ImageFrame('video_id', 'frame_id', frame=test_image,
+    frame = ImageFrame('source_id', 'frame_id', frame=test_image,
                        zoom_ratio=1, zone=zone)
 
     assert not frame.is_zoomed
@@ -162,7 +162,7 @@ def test_zoomed_frame():
     padding_x, padding_y = 30, 50
     zone = Zone(padding_x, padding_y,
                 end_x=resize_width - padding_x, end_y=resize_height - padding_y)
-    frame = ImageFrame('video_id', 'frame_id', frame=test_image,
+    frame = ImageFrame('source_id', 'frame_id', frame=test_image,
                        zoom_ratio=zoom_ratio, zone=zone)
 
     extract_start = Vertex(100, 100)

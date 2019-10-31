@@ -277,10 +277,10 @@ class ImageFrame(object):
     可以指定检测区域
     """
 
-    def __init__(self, video_id, frame_id, frame=None,
+    def __init__(self, source_id, frame_id, frame=None,
                  zoom_ratio=1, zone: Zone = None):
         """缩放比例优先于检测区域，即检测区域是在缩放后的图像上选取"""
-        self.video_id = video_id
+        self.source_id = source_id
         self.frame_id = frame_id
         self.frame = frame
 
@@ -347,7 +347,7 @@ class ImageFrame(object):
         return zone.expanded_zone(self.resized_frame, bias_x, bias_y)
 
     def __str__(self):
-        return '{}-{}'.format(self.video_id, self.frame_id)
+        return '{}-{}'.format(self.source_id, self.frame_id)
 
     def __repr__(self):
         return '{}: {}'.format(str(self), str(self.zone))

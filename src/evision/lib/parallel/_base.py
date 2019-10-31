@@ -50,11 +50,6 @@ class AtomicInteger(object):
 
 class ParallelWrapperMixin(object):
     """后台服务（进程或线程）公共方法封装"""
-    _initialized = False
-    _daemon = False
-    _inited = False
-    _running = False
-    _ended = False
 
     def __init__(self, name=None, interval=None,
                  show_error=False, fail_on_error=False,
@@ -74,6 +69,10 @@ class ParallelWrapperMixin(object):
         self.__tick = AtomicInteger()
         self.__total_time = 0
 
+        self._inited = False
+        self._running = False
+        self._ended = False
+
         self._init()
 
     def is_inited(self):
@@ -82,6 +81,8 @@ class ParallelWrapperMixin(object):
     def _init(self):
         """初始化方法"""
         self._stop_event.clear()
+        if self._inited:
+            return
         try:
             if not self._init_lock:
                 self.init()
@@ -103,6 +104,8 @@ class ParallelWrapperMixin(object):
         pass
 
     def run(self):
+        if not self._inited:
+            self._init()
         if not self.is_inited():
             logger.info(f'Job not inited, please call {self.__class__}.init() first')
             return
@@ -136,6 +139,7 @@ class ParallelWrapperMixin(object):
             toc = time.perf_counter()
             elapsed = toc - tick
             if self.interval and self.interval > 0 and elapsed < self.interval:
+                # logger.debug('Waiting for next tick, sleep {}s', max(self.interval - elapsed, 0))
                 time.sleep(max(self.interval - elapsed, 0))
             self.__total_time += elapsed
 

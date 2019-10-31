@@ -7,6 +7,7 @@
 # @date: 2019-10-25 16:24
 # @version: 1.0
 #
+import time
 from typing import Union
 
 from evision.lib.entity import ImageFrame, Zone
@@ -152,7 +153,7 @@ class ImageSourceWrapper(object):
         return image_frames[0] if n_frame == 1 else image_frames
 
     def is_alive(self):
-        return self._image_source.is_alive()
+        return self._image_source.running
 
     @property
     def source_id(self):
@@ -161,3 +162,15 @@ class ImageSourceWrapper(object):
     @property
     def uri_and_type(self):
         return self._image_source.uri_and_type
+
+    def open_image_source(self):
+        if not self._image_source:
+            raise ValueError('No image source configured')
+        if self.is_alive():
+            logger.debug('Image source={} already started', self.source_id)
+            return
+
+        with self._image_source.read_lock:
+            self._image_source.setDaemon(True)
+            self._image_source.start()
+            time.sleep(1)

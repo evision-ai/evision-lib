@@ -7,10 +7,10 @@
 # @date: 2019-10-18 10:34
 # @version: 1.0
 #
-from multiprocessing import Process
 import os
 import signal
 import time
+from multiprocessing import Process
 
 from evision.lib.log import logutil
 from ._base import ParallelWrapperMixin
@@ -38,9 +38,6 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
 
     def process(self):
         raise NotImplementedError
-
-    def is_inited(self):
-        return self.is_alive()
 
     def init(self):
         if self.answer_sigint:
