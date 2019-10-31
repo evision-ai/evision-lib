@@ -10,7 +10,7 @@
 import time
 from collections import defaultdict
 from threading import Lock
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 from evision.argus.app import ArgusApplication, ArgusApplicationConfig
 from evision.lib.log import logutil
@@ -32,7 +32,7 @@ class ImageSourceCoordinator(object):
     def register(self, image_source_config: ImageSourceConfig) -> BaseImageSource:
         raise NotImplementedError
 
-    def remove(self, source_key: (Union[str, int], ImageSourceType)):
+    def remove(self, source_key: Tuple[str or int, ImageSourceType]):
         raise NotImplementedError
 
     def remove_all(self):
@@ -46,7 +46,7 @@ class ImageSourceCoordinator(object):
 
 class DictImageSourceCoordinator(ImageSourceCoordinator):
     # (source_uri, source_type) 与 image_source 对应关系
-    __source_map: Dict[(Union[str, int], ImageSourceType), BaseImageSource]
+    __source_map: Dict[Tuple[str or int, ImageSourceType], BaseImageSource]
 
     def __init__(self):
         self.__source_map = dict()
@@ -79,7 +79,7 @@ class DictImageSourceCoordinator(ImageSourceCoordinator):
 
 class ArgusCoordinator(ProcessWrapper):
     # (source_uri, source_type) 与 app 对应关系
-    __dispatches: Dict[(Union[str, int], ImageSourceType), List[ArgusApplication]]
+    __dispatches: Dict[Tuple[Union[str, int], ImageSourceType], List[ArgusApplication]]
 
     def __init__(self, *args, **kwargs):
         ProcessWrapper.__init__(self, *args, **kwargs)
