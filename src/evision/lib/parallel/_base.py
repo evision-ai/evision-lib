@@ -8,7 +8,6 @@
 # @version: 1.0
 #
 import threading
-
 import time
 
 from evision.lib.log import logutil
@@ -91,8 +90,8 @@ class ParallelWrapperMixin(object):
                     self.init()
             self._inited = True
         except Exception:
-            logger.error('Failed initializing {}, type={}', self.name,
-                         self.__class__)
+            logger.exception('Failed initializing {}, type={}', self.name,
+                             self.__class__)
             self._stop_event.set()
 
     def init(self):
@@ -145,6 +144,17 @@ class ParallelWrapperMixin(object):
         logger.info('[{}] Finished with {} ticks', self.name, self.ticks)
         self.on_stop()
 
+    def stop(self):
+        if self._ended:
+            logger.warn('[{}] Already stopped', self.name)
+            return
+        # set stop event
+        try:
+            self._stop_event.set()
+            return
+        except Exception as e:
+            logger.exception(f'[{self.name}] Failed setting stop event', e)
+
     def on_stop(self):
         pass
 
@@ -157,6 +167,10 @@ class ParallelWrapperMixin(object):
     def avg_time(self):
         """ avg handling time in millisecond """
         return self.__total_time / (self.__tick or 1)
+
+    @property
+    def ended(self):
+        return self._ended
 
     @property
     def ticks(self):

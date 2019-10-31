@@ -7,9 +7,10 @@
 # @date: 2019-10-18 10:34
 # @version: 1.0
 #
+from multiprocessing import Process
 import os
 import signal
-from multiprocessing import Process
+import time
 
 from evision.lib.log import logutil
 from ._base import ParallelWrapperMixin
@@ -25,14 +26,15 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
     def __init__(self, name=None, paths=None,
                  answer_sigint=False, answer_sigterm=False,
                  *args, **kwargs):
-        Process.__init__(self, name=name, args=args, kwargs=kwargs)
-        ParallelWrapperMixin.__init__(self, *args, **kwargs)
         self._paths = paths
 
         self.answer_sigint = answer_sigint
         self.answer_sigterm = answer_sigterm
 
         self._update_sys_path()
+
+        Process.__init__(self, name=name, args=args, kwargs=kwargs)
+        ParallelWrapperMixin.__init__(self, *args, **kwargs)
 
     def process(self):
         raise NotImplementedError
@@ -48,17 +50,11 @@ class ProcessWrapper(ParallelWrapperMixin, Process):
             signal.signal(signal.SIGTERM, self._sig_kill_handler)
 
     def stop(self):
-        if self._ended:
-            logger.warn('[{}] Already stopped', self.name)
-            return
-        # set stop event
-        try:
-            self._stop_event.set()
-            return
-        except Exception as e:
-            logger.error(f'[{self.name}] Failed setting stop event', e)
-        # kill
-        os.kill(self.pid, signal.SIGTERM)
+        super().stop()
+        time.sleep(1)
+        if not self.ended:
+            # kill
+            os.kill(self.pid, signal.SIGTERM)
 
     def _sig_kill_handler(self, sig, frame):
         logger.info('[{}] Stopping with signal={}, frame={}',
