@@ -8,9 +8,10 @@
 # @version: 1.0
 
 import itertools
+from enum import Enum
+from typing import Dict, List, Type, Union
 
 from evision.lib.constant import Keys
-from evision.lib.decorator import class_property
 from evision.lib.error import PropertiesNotProvided
 from evision.lib.log import LogHandlers, logutil
 from evision.lib.util import TypeUtil
@@ -59,7 +60,6 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             Classes extends this mixin but set no `_handler_alias` are not
             exposed to WebAPI, and are set with unique aliases
     """
-
     # required properties
     required_properties = []
 
@@ -76,15 +76,16 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             if property_name not in value:
                 missing.append(property_name)
         if not missing:
-            raise PropertiesNotProvided(missing)
+            return
+        raise PropertiesNotProvided(missing)
 
-    @property
-    def visible(self):
-        return self.handler_alias is not None
+    @classmethod
+    def visible(cls):
+        return cls.handler_alias is not None
 
-    @property
-    def alias(self):
-        return self.handler_alias
+    @classmethod
+    def handler_name(cls):
+        return cls.handler_alias.name if isinstance(cls.handler_alias, Enum) else cls.handler_alias
 
     def get_properties(self):
         _properties = {}
@@ -110,7 +111,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
     properties = property(get_properties, set_properties)
 
     def describe(self):
-        return {self.handler_alias: self.get_properties()}
+        return self.handler_alias, self.get_properties()
 
     @property
     def alias_and_properties(self):
@@ -119,43 +120,60 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             Keys.PROPERTIES: self.properties
         }
 
-    @class_property
-    def available_handler_classes(cls):
-        if hasattr(cls, '_handler_classes'):
-            return getattr(cls, '_handler_classes')
-        _handler_classes = {}
+    @classmethod
+    def handlers(cls) -> Dict[str, type]:
+        """获取工具类名称到工具类的映射
+        """
+        attr_name = f'__handler_class_map_{cls.__name__}'
+        if hasattr(PropertyHandlerMixin, attr_name):
+            return getattr(PropertyHandlerMixin, attr_name)
+        _handler_class_map = {}
 
         subclasses = TypeUtil.list_subclasses(cls)
         for subclass in subclasses:
-            assert isinstance(subclass, PropertyHandlerMixin)
+            assert issubclass(subclass,
+                              PropertyHandlerMixin), f'Class={subclass} not a subclass of PropertyHandlerMixin'
             if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
-                logger.info('Skip {} for no alias set', subclass)
+                logger.debug('Skip {} for no alias set', subclass)
                 continue
-            _handler_classes[subclass.handler_alias] = subclass
+            _handler_class_map[subclass.handler_name()] = subclass
 
-        setattr(cls, '_handler_classes', _handler_classes)
-        return _handler_classes
+        setattr(cls, attr_name, _handler_class_map)
+        return _handler_class_map
 
-    @class_property
-    def available_handlers(cls):
-        if hasattr(cls, '_available_handlers'):
-            return getattr(cls, '_available_handlers')
-        _available_handlers = {}
+    @classmethod
+    def handler_properties(cls) -> Dict[str, Dict[str, List[str]]]:
+        """获取工具类名称到可以通过配置还原的工具类必需和可选属性的映射
+        """
+        attr_name = f'__handler_properties_map_{cls.__name__}'
+        if hasattr(PropertyHandlerMixin, attr_name):
+            return getattr(PropertyHandlerMixin, attr_name)
+        _handler_properties_map = {}
 
         subclasses = TypeUtil.list_subclasses(cls)
         for subclass in subclasses:
             if not TypeUtil.is_subclass(subclass, PropertyHandlerMixin):
                 continue
             if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
-                logger.info('Skip {} for no alias set', subclass)
+                logger.debug('Skip {} for no alias set', subclass)
                 continue
-            _available_handlers[subclass.handler_alias] = {
+            _handler_properties_map[subclass.handler_name()] = {
                 'required': subclass.required_properties,
                 'optional': subclass.optional_properties
             }
 
-        setattr(cls, '_available_handlers', _available_handlers)
-        return _available_handlers
+        setattr(cls, attr_name, _handler_properties_map)
+        return _handler_properties_map
+
+    @classmethod
+    def get_handler_by_name(cls, name: Union[str, Enum]) -> Type:
+        if not name:
+            raise ValueError('Handler name should be provided while querying handlers')
+        if isinstance(name, Enum):
+            name = name.name
+        if name not in cls.handlers():
+            raise ValueError(f'No handler configured for name={name} with class={cls.__name__}')
+        return cls.handlers()[name]
 
 
 __all__ = [
