@@ -10,17 +10,23 @@
 # @version: 1.0
 #
 import time
+from enum import IntEnum
 from typing import List, Union
 
 from pydantic import BaseModel
 
 from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
+from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
 from evision.lib.video import BaseImageSource, ImageSourceConfig
 from evision.lib.video import ImageSourceWrapper, ImageSourceWrapperConfig
 
 logger = logutil.get_logger()
+
+
+class App(IntEnum):
+    dummy = -42
 
 
 class ArgusApplicationConfig(BaseModel):
@@ -36,7 +42,7 @@ class ArgusApplicationConfig(BaseModel):
         arbitrary_types_allowed = True
 
 
-class ArgusApplication(ProcessWrapper):
+class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
     source: ImageSourceWrapper
     frame_batch: int
 
@@ -95,8 +101,17 @@ class ArgusApplication(ProcessWrapper):
         if not self.source.is_alive():
             raise ValueError(f'Failed starting app={self.name}, image source not opened')
 
+    @classmethod
+    def app_class(cls, name: App):
+        return cls.get_handler_by_name(name.name)
 
-class DummyApplication(ArgusApplication):
+
+ArgusApplication = ArgusApp
+
+
+class DummyApplication(ArgusApp):
+    handler_alias = App.dummy
+
     def process_frame(self, frames):
         logger.info(f'{self.name} @ {time.time()}')
         pass

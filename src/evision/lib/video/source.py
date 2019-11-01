@@ -8,6 +8,7 @@
 #
 import queue
 import time
+from enum import IntEnum
 from queue import Queue
 from threading import Lock, RLock
 from typing import Union
@@ -18,7 +19,7 @@ from pydantic import BaseModel
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
-from evision.lib.mixin import FailureCountMixin, SaveAndLoadConfigMixin
+from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
 from evision.lib.video import ImageSourceType, ImageSourceUtil
@@ -46,8 +47,17 @@ class ImageSourceConfig(BaseModel):
     extra: dict = {}
 
 
-class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
+class ImageSourceHandler(IntEnum):
+    video_capture = 1
+    video_file = 2
+
+
+class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     _MAX_FAIL_TIMES = 100
+
+    # 属性配置
+    required_properties = ['source_uri', 'source_type']
+    handler_alias = None
 
     @classmethod
     def construct(cls, config: ImageSourceConfig):
@@ -65,7 +75,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
                  frame_queue_size: int = 24,
                  name: str = None, description: str = None, **kwargs):
         FailureCountMixin.__init__(self)
-        SaveAndLoadConfigMixin.__init__(self)
+        PropertyHandlerMixin.__init__(self)
 
         self.__image_source_inited = False
         self._lock = RLock()
@@ -274,13 +284,14 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     def get_config(self):
         if not self.__image_source_inited:
             return None, {}
-        _properties = self.get_properties()
+        _properties = self.properties
         if _properties is None:
             _properties = {}
         _properties.update({'id': self.source_id})
         return self.config_section, _properties
 
-    def get_properties(self):
+    @property
+    def properties(self):
         _source_type = self.source_type.value \
             if isinstance(self.source_type, ImageSourceType) \
             else self.source_type
@@ -304,6 +315,8 @@ class VideoCaptureSource(BaseImageSource):
     - 本地视频文件：ImageSourceType.VIDEO_FILE
     """
     source: cv2.VideoCapture
+
+    handler_alias = ImageSourceHandler.video_capture
 
     @staticmethod
     def validate_source(source_uri, source_type, release=True):
@@ -378,6 +391,8 @@ class VideoCaptureSource(BaseImageSource):
 
 
 class VideoFileImageSource(VideoCaptureSource):
+    handler_alias = ImageSourceHandler.video_file
+
     def __init__(self, **kwargs):
         self.endless = kwargs.pop('endless') if 'endless' in kwargs else False
         super().__init__(**kwargs)
