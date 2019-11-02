@@ -17,17 +17,20 @@ from evision.lib.video import ImageSourceType, ImageSourceWrapperConfig
 from evision.lib.video.source import VideoFileImageSource
 
 logger = logutil.get_logger()
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 __local_video__ = os.path.expanduser('~/Downloads/test.avi')
+__ip_camera__ = 'rtsp://admin:1111aaaa@192.100.1.189:554/h264/ch1/main/av_stream'
 
 __wrapper_config__ = ImageSourceWrapperConfig(
     width=960, height=540,
     zone_start_x=80, zone_start_y=70, zone_width=800, zone_height=400)
 
+# Modify here !!!
 source = VideoFileImageSource(
-    endless=True,
-    source_uri=__local_video__, source_type=ImageSourceType.VIDEO_FILE)
+    # source_uri=__local_video__, source_type=ImageSourceType.VIDEO_FILE, name='Test-File',
+    source_uri=__ip_camera__, source_type=ImageSourceType.IP_CAMERA, name='Camera-189',
+    endless=True)
 
 
 def test_app_config():
