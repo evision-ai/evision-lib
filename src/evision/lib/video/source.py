@@ -56,17 +56,21 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     _MAX_FAIL_TIMES = 100
 
     # 属性配置
-    required_properties = ['source_uri', 'source_type']
+    required_properties = [Keys.SOURCE_URI, Keys.SOURCE_TYPE]
+    optional_properties = [Keys.WIDTH, Keys.HEIGHT, Keys.FPS, Keys.NAME, Keys.DESCRIPTION]
     handler_alias = None
 
     @classmethod
     def construct(cls, config: ImageSourceConfig):
-        return cls(source_uri=config.source_uri, source_type=config.source_type,
-                   source_id=config.source_id,
-                   width=config.width, height=config.height,
-                   fps=config.fps, frame_queue_size=config.frame_queue_size,
-                   name=config.name, description=config.description,
-                   **config.extra)
+        handler_cls = cls.get_handler_by_name(config.handler_name) \
+            if config.handler_name is not None \
+            else cls
+        return handler_cls(source_uri=config.source_uri, source_type=config.source_type,
+                           source_id=config.source_id,
+                           width=config.width, height=config.height,
+                           fps=config.fps, frame_queue_size=config.frame_queue_size,
+                           name=config.name, description=config.description,
+                           **config.extra)
 
     def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,
@@ -254,8 +258,8 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     def info(self):
         return {
             Keys.ID: self.source_id,
-            Keys.SOURCE: self.source_uri,
-            Keys.TYPE: self.source_type.value,
+            Keys.SOURCE_URI: self.source_uri,
+            Keys.SOURCE_TYPE: self.source_type.value,
             Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description
         }
@@ -265,7 +269,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         if self.source_uri is None or self.source_type is None:
             raise ValueError('Invalid video source={} or type={}'.format(
                 self.source_uri, self.source_type))
-        return (self.source_uri, self.source_type)
+        return self.source_uri, self.source_type
 
     def set_name_description(self, name, description):
         if self.name == name and self.description == description:
@@ -289,22 +293,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             _properties = {}
         _properties.update({'id': self.source_id})
         return self.config_section, _properties
-
-    @property
-    def properties(self):
-        _source_type = self.source_type.value \
-            if isinstance(self.source_type, ImageSourceType) \
-            else self.source_type
-
-        return {
-            Keys.SOURCE: self.source_uri,
-            Keys.TYPE: _source_type,
-            Keys.WIDTH: self.width,
-            Keys.HEIGHT: self.height,
-            Keys.FPS: self.fps,
-            Keys.NAME: self.name,
-            Keys.DESCRIPTION: self.description,
-        }
 
 
 class VideoCaptureSource(BaseImageSource):
