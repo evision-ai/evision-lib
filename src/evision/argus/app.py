@@ -12,7 +12,7 @@
 import time
 from typing import List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
@@ -32,13 +32,16 @@ class App(ValueAsStrIntEnum):
 class ArgusApplicationConfig(BaseModel):
     image_source_config: ImageSourceConfig = None
     source_wrapper_config: ImageSourceWrapperConfig = None
+    app_handler: Union[App, str] = None
     frame_batch: int = 1
     fps: float = 24
     name: str = None
     paths: Union[str, list, None] = None
-    extra: dict = {}
+    answer_sigint: bool = False
+    answer_sigterm: bool = False
 
-    class Config:
+    class Config():
+        extra = Extra.allow
         arbitrary_types_allowed = True
 
 
@@ -57,8 +60,9 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
             raise ValueError('Image source not configured for argus application')
         if not wrapper:
             wrapper = ImageSourceWrapper(source, config.source_wrapper_config)
-        return cls(wrapper, config.frame_batch, config.fps,
-                   config.name, config.paths, **config.extra)
+        app_class = cls.get_handler_by_name(config.app_handler) if config.app_handler is not None else cls
+        return app_class(wrapper,
+                         **config.dict(exclude={'image_source_config', 'source_wrapper_config', 'app_handler'}))
 
     def __init__(self, source_wrapper: ImageSourceWrapper,
                  frame_batch: int = 1, fps: float = 24,
@@ -100,10 +104,6 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
             raise ValueError(f'Failed starting app={self.name}, no image source provided')
         if not self.source.is_alive():
             raise ValueError(f'Failed starting app={self.name}, image source not opened')
-
-    @classmethod
-    def app_class(cls, name: App):
-        return cls.get_handler_by_name(name.name)
 
 
 ArgusApplication = ArgusApp

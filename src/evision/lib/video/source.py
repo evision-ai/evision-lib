@@ -6,6 +6,7 @@
 # @date: 2019-10-18 20:21
 # @version: 1.0
 #
+import multiprocessing
 import queue
 import time
 from queue import Queue
@@ -14,13 +15,14 @@ from typing import Union
 
 import cv2
 import numpy as np
+from pydantic import BaseModel, Extra
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
-from evision.lib.util.types import BaseModelWithExtras, ValueAsStrIntEnum
+from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger()
@@ -38,7 +40,7 @@ class ImageSourceHandler(ValueAsStrIntEnum):
     video_file = 2
 
 
-class ImageSourceConfig(BaseModelWithExtras):
+class ImageSourceConfig(BaseModel):
     source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
     handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture
@@ -49,7 +51,10 @@ class ImageSourceConfig(BaseModelWithExtras):
     frame_queue_size: int = 24
     name: str = None
     description: str = None
-    extra: dict = {}
+
+    class Config():
+        extra = Extra.allow
+        arbitrary_types_allowed = True
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
@@ -65,12 +70,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         handler_cls = cls.get_handler_by_name(config.handler_name) \
             if config.handler_name is not None \
             else cls
-        return handler_cls(source_uri=config.source_uri, source_type=config.source_type,
-                           source_id=config.source_id,
-                           width=config.width, height=config.height,
-                           fps=config.fps, frame_queue_size=config.frame_queue_size,
-                           name=config.name, description=config.description,
-                           **config.extra)
+        return handler_cls(**config.dict(exclude={'handler_name', }))
 
     def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,

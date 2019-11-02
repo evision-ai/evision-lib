@@ -8,9 +8,6 @@
 # @version: 1.0
 #
 from enum import IntEnum
-from typing import Any
-
-from pydantic import BaseModel
 
 __all__ = [
     'TypeUtil',
@@ -62,14 +59,3 @@ class ValueAsStrIntEnum(IntEnum):
 
     def __str__(self):
         return str(self.value)
-
-
-class BaseModelWithExtras(BaseModel):
-    def __init__(self, **data: Any):
-        extra = data.pop('extra') if 'extra' in data else {}
-        extra_keys = set(data.keys()) - set(self.__fields__.keys())
-        extra.update({key: data.pop(key) for key in extra_keys})
-        super().__init__(extra=extra, **data)
-
-    class Config():
-        arbitrary_types_allowed = True
