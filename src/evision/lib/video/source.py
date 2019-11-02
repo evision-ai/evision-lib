@@ -8,7 +8,6 @@
 #
 import queue
 import time
-from enum import IntEnum
 from queue import Queue
 from threading import Lock, RLock
 from typing import Union
@@ -21,7 +20,7 @@ from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
-from evision.lib.util import CacheUtil
+from evision.lib.util import CacheUtil, ValueAsStrIntEnum
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger()
@@ -34,9 +33,15 @@ __all__ = [
 ]
 
 
+class ImageSourceHandler(ValueAsStrIntEnum):
+    video_capture = 1
+    video_file = 2
+
+
 class ImageSourceConfig(BaseModel):
     source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
+    handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture
     source_id: str = None
     width: int = None
     height: int = None
@@ -45,11 +50,6 @@ class ImageSourceConfig(BaseModel):
     name: str = None
     description: str = None
     extra: dict = {}
-
-
-class ImageSourceHandler(IntEnum):
-    video_capture = 1
-    video_file = 2
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
