@@ -56,6 +56,5 @@ class ImageSourcePreview(Thread):
             cv2.imshow(self.source.name, frame)
 
             if cv2.waitKey(200) & 0xFF == ord('q'):
-                cv2.destroyWindow(self.source.name)
                 break
         cv2.destroyWindow(self.source.name)
