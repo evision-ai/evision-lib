@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Dict, List, Type, Union
 
 from evision.lib.constant import Keys
+from evision.lib.decorator import classproperty, classproperty_support
 from evision.lib.error import PropertiesNotProvided
 from evision.lib.log import LogHandlers, logutil
 from evision.lib.util import TypeUtil
@@ -50,6 +51,7 @@ class SaveAndLoadConfigMixin(object):
         pass
 
 
+@classproperty_support
 class PropertyHandlerMixin(SaveAndLoadConfigMixin):
     """ Mixin for handling properties
 
@@ -57,7 +59,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
         required_properties: required property names
         optional_properties: optional property names
         handler_alias: handler alias
-            Classes extends this mixin but set no `_handler_alias` are not
+            Classes extends this mixin but set no `handler_alias` are not
             exposed to WebAPI, and are set with unique aliases
     """
     # required properties
@@ -79,11 +81,11 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             return
         raise PropertiesNotProvided(missing)
 
-    @classmethod
+    @classproperty
     def visible(cls):
         return cls.handler_alias is not None
 
-    @classmethod
+    @classproperty
     def handler_name(cls):
         return cls.handler_alias.name if isinstance(cls.handler_alias, Enum) else cls.handler_alias
 
@@ -103,12 +105,12 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
                 setattr(self, property_name, value[property_name])
         self._reload()
 
+    properties = property(get_properties, set_properties)
+
     def _reload(self):
         """ Reload function on properties reset
         """
         pass
-
-    properties = property(get_properties, set_properties)
 
     def describe(self):
         return self.handler_alias, self.get_properties()
@@ -120,7 +122,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             Keys.PROPERTIES: self.properties
         }
 
-    @classmethod
+    @classproperty
     def handlers(cls) -> Dict[str, type]:
         """获取工具类名称到工具类的映射
         """
@@ -136,12 +138,12 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
                 logger.debug('Skip {} for no alias set', subclass)
                 continue
-            _handler_class_map[subclass.handler_name()] = subclass
+            _handler_class_map[subclass.handler_name] = subclass
 
         setattr(cls, attr_name, _handler_class_map)
         return _handler_class_map
 
-    @classmethod
+    @classproperty
     def handler_properties(cls) -> Dict[str, Dict[str, List[str]]]:
         """获取工具类名称到可以通过配置还原的工具类必需和可选属性的映射
         """
@@ -157,7 +159,7 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             if not hasattr(subclass, 'handler_alias') or subclass.handler_alias is None:
                 logger.debug('Skip {} for no alias set', subclass)
                 continue
-            _handler_properties_map[subclass.handler_name()] = {
+            _handler_properties_map[subclass.handler_name] = {
                 'required': subclass.required_properties,
                 'optional': subclass.optional_properties
             }
@@ -171,9 +173,9 @@ class PropertyHandlerMixin(SaveAndLoadConfigMixin):
             raise ValueError('Handler name should be provided while querying handlers')
         if isinstance(name, Enum):
             name = name.name
-        if name not in cls.handlers():
+        if name not in cls.handlers:
             raise ValueError(f'No handler configured for name={name} with class={cls.__name__}')
-        return cls.handlers()[name]
+        return cls.handlers[name]
 
 
 __all__ = [
