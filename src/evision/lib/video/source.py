@@ -6,7 +6,6 @@
 # @date: 2019-10-18 20:21
 # @version: 1.0
 #
-import multiprocessing
 import queue
 import time
 from queue import Queue
@@ -52,7 +51,7 @@ class ImageSourceConfig(BaseModel):
     name: str = None
     description: str = None
 
-    class Config():
+    class Config:
         extra = Extra.allow
         arbitrary_types_allowed = True
 
@@ -335,13 +334,13 @@ class VideoCaptureSource(BaseImageSource):
         source_ = self.validate_source(self.source_uri, self.source_type,
                                        release=False)
         if source_ is None or not source_.isOpened():
-            raise Exception('无法连接到摄像头/视频源，请检查')
+            raise Exception('Cannot connecting to image source, please check you configuration')
 
         self.source = source_
         self.frame_size = (self.source.get(cv2.CAP_PROP_FRAME_WIDTH),
                            self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.source.get(cv2.CAP_PROP_FPS)
-        logger.info('连接到视频源[{}], type={}，size=({}), fps={}',
+        logger.info('Connected to image source[{}], type={}，size=({}), fps={}',
                     self.source_uri, self.source_type,
                     self.frame_size, self.fps)
 
