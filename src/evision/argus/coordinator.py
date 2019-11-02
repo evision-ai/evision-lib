@@ -103,8 +103,9 @@ class ArgusCoordinator(ProcessWrapper):
         with self.__lock:
             if not image_source.running:
                 with image_source.read_lock:
-                    image_source.setDaemon(True)
-                    image_source.start()
+                    if not image_source.running:
+                        image_source.daemon = True
+                        image_source.start()
             app.daemon = True
             app.start()
             self.__dispatches[image_source.uri_and_type].append(app)

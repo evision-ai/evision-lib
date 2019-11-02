@@ -80,7 +80,7 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
         """应用通过重载本方法实现功能"""
         image_frames = self.source.provide(self.frame_batch)
         n_frames = int(image_frames is not None) if self.frame_batch == 1 else len(image_frames)
-        logger.debug("{} frames got", n_frames)
+        logger.debug("[{}] {} frames got", self.name, n_frames)
         if n_frames != 0:
             self.process_frame(image_frames)
 
@@ -93,7 +93,7 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
         super().init()
         logger.debug('Application={} initializing...', self.name)
         if self.source and not self.source.is_alive():
-            logger.debug('Opening image source: {}', self.source)
+            logger.debug('Opening image source: {}', self.source.name)
             self.source.open_image_source()
 
     def is_inited(self):
@@ -113,5 +113,5 @@ class DummyApplication(ArgusApp):
     handler_alias = App.dummy
 
     def process_frame(self, frames):
-        logger.info(f'{self.name} @ {time.time()}')
+        logger.info(f'App[{self.name}] processing frame[{frames.frame_id} @ {time.time()}')
         pass

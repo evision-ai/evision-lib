@@ -171,6 +171,7 @@ class ImageSourceWrapper(object):
             return
 
         with self._image_source.read_lock:
-            self._image_source.setDaemon(True)
-            self._image_source.start()
-            time.sleep(1)
+            if not self._image_source.running:
+                self._image_source.setDaemon(True)
+                self._image_source.start()
+                time.sleep(1)
