@@ -26,14 +26,3 @@ class ThreadWrapper(ParallelWrapperMixin, Thread):
 
     def process(self):
         raise NotImplementedError
-
-    def stop(self):
-        if self._ended:
-            logger.warn('[{}] Already stopped', self.name)
-            return
-        # set stop event
-        try:
-            self._stop_event.set()
-            return
-        except Exception as e:
-            logger.error(f'[{self.name}] Failed setting stop event', e)
