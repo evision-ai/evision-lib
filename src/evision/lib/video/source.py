@@ -14,13 +14,13 @@ from typing import Union
 
 import cv2
 import numpy as np
-from pydantic import BaseModel
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
-from evision.lib.util import CacheUtil, ValueAsStrIntEnum
+from evision.lib.util import CacheUtil
+from evision.lib.util.types import BaseModelWithExtras, ValueAsStrIntEnum
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger()
@@ -38,7 +38,7 @@ class ImageSourceHandler(ValueAsStrIntEnum):
     video_file = 2
 
 
-class ImageSourceConfig(BaseModel):
+class ImageSourceConfig(BaseModelWithExtras):
     source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
     handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture

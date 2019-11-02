@@ -15,7 +15,7 @@ from evision.lib.constant import Keys
 from evision.lib.decorator import classproperty, classproperty_support
 from evision.lib.error import PropertiesNotProvided
 from evision.lib.log import LogHandlers, logutil
-from evision.lib.util import TypeUtil
+from evision.lib.util.types import TypeUtil
 
 logger = logutil.get_logger(LogHandlers.DEFAULT)
 

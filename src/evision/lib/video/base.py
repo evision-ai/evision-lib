@@ -8,7 +8,7 @@
 # @version: 1.0
 
 from evision.lib.log import logutil
-from evision.lib.util import ValueAsStrIntEnum
+from evision.lib.util.types import ValueAsStrIntEnum
 
 logger = logutil.get_logger()
 

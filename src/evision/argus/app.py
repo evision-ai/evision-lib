@@ -18,7 +18,7 @@ from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
 from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
-from evision.lib.util import ValueAsStrIntEnum
+from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import BaseImageSource, ImageSourceConfig
 from evision.lib.video import ImageSourceWrapper, ImageSourceWrapperConfig
 
