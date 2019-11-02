@@ -12,31 +12,40 @@
 import time
 from typing import List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
+from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
+from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import BaseImageSource, ImageSourceConfig
 from evision.lib.video import ImageSourceWrapper, ImageSourceWrapperConfig
 
 logger = logutil.get_logger()
 
 
+class App(ValueAsStrIntEnum):
+    dummy = -42
+
+
 class ArgusApplicationConfig(BaseModel):
     image_source_config: ImageSourceConfig = None
     source_wrapper_config: ImageSourceWrapperConfig = None
+    app_handler: Union[App, str] = None
     frame_batch: int = 1
     fps: float = 24
     name: str = None
     paths: Union[str, list, None] = None
-    extra: dict = {}
+    answer_sigint: bool = False
+    answer_sigterm: bool = False
 
-    class Config:
+    class Config():
+        extra = Extra.allow
         arbitrary_types_allowed = True
 
 
-class ArgusApplication(ProcessWrapper):
+class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
     source: ImageSourceWrapper
     frame_batch: int
 
@@ -51,8 +60,9 @@ class ArgusApplication(ProcessWrapper):
             raise ValueError('Image source not configured for argus application')
         if not wrapper:
             wrapper = ImageSourceWrapper(source, config.source_wrapper_config)
-        return cls(wrapper, config.frame_batch, config.fps,
-                   config.name, config.paths, **config.extra)
+        app_class = cls.get_handler_by_name(config.app_handler) if config.app_handler is not None else cls
+        return app_class(wrapper,
+                         **config.dict(exclude={'image_source_config', 'source_wrapper_config', 'app_handler'}))
 
     def __init__(self, source_wrapper: ImageSourceWrapper,
                  frame_batch: int = 1, fps: float = 24,
@@ -96,7 +106,12 @@ class ArgusApplication(ProcessWrapper):
             raise ValueError(f'Failed starting app={self.name}, image source not opened')
 
 
-class DummyApplication(ArgusApplication):
+ArgusApplication = ArgusApp
+
+
+class DummyApplication(ArgusApp):
+    handler_alias = App.dummy
+
     def process_frame(self, frames):
         logger.info(f'{self.name} @ {time.time()}')
         pass

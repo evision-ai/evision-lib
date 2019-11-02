@@ -6,9 +6,13 @@
 # @author: Chen Shijiang(chenshijiang@evision.ai)
 # @date: 2019-10-12 14:48
 # @version: 1.0
+#
+from enum import IntEnum
 
 __all__ = [
-    'TypeUtil'
+    'TypeUtil',
+    'ValueAsStrIntEnum',
+    'BaseModelWithExtras'
 ]
 
 
@@ -47,3 +51,11 @@ class TypeUtil(object):
         if include_self:
             _subclasses.add(class_)
         return _subclasses
+
+
+class ValueAsStrIntEnum(IntEnum):
+    """Override `__str__` of `IntEnum`, returns value of enum
+    """
+
+    def __str__(self):
+        return str(self.value)

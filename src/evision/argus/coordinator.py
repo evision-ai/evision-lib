@@ -10,9 +10,9 @@
 import time
 from collections import defaultdict
 from threading import Lock
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Type, Union
 
-from evision.argus.app import ArgusApplication, ArgusApplicationConfig
+from evision.argus.app import ArgusApp, ArgusApplication, ArgusApplicationConfig
 from evision.lib.log import logutil
 from evision.lib.parallel import ProcessWrapper
 from evision.lib.util import DictUtil
@@ -54,13 +54,15 @@ class DictImageSourceCoordinator(ImageSourceCoordinator):
         self.__lock = Lock()
 
     def register(self, image_source_config: ImageSourceConfig,
-                 clazz: type = BaseImageSource) -> BaseImageSource:
+                 clazz: Type[BaseImageSource] = None) -> BaseImageSource:
         source_uri, source_type = ImageSourceUtil.parse_source_config(
             image_source_config.source_uri, image_source_config.source_type)
         source_key = (source_uri, source_type)
+        if clazz:
+            image_source_config.handler_name = clazz.handler_name
         with self.__lock:
             if source_key not in self.__source_map:
-                source = clazz.construct(image_source_config)
+                source = BaseImageSource.construct(image_source_config)
                 self.__source_map[source_key] = source
         return self.__source_map[source_key]
 
@@ -90,10 +92,13 @@ class ArgusCoordinator(ProcessWrapper):
         self.__lock = Lock()
 
     def add(self, app_config: ArgusApplicationConfig,
-            app_type: type = ArgusApplication, source_type: type = BaseImageSource) -> ArgusApplication:
+            app_type: Type[ArgusApp] = None,
+            source_type: Type[BaseImageSource] = None) -> ArgusApplication:
         image_source = self.__source_coordinator.register(app_config.image_source_config, source_type)
         source_wrapper = ImageSourceWrapper(image_source, app_config.source_wrapper_config)
-        app = app_type.construct(app_config, wrapper=source_wrapper)
+        if app_type:
+            app_config.app_handler = app_type.handler_alias
+        app = ArgusApp.construct(app_config, wrapper=source_wrapper)
 
         with self.__lock:
             if not image_source.running:

@@ -72,7 +72,8 @@ setup(
         'tornado>=5.0.0',
         'opencv-python',
         'numpy>=1.11.0',
-        'fields'  # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'fields',
+        'pydantic>=1.0'
     ],
     extras_require={
         'tornado': [

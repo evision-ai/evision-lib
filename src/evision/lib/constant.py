@@ -35,8 +35,10 @@ class Keys(object):
     FPS = 'fps'
     DESCRIPTION = 'description'
 
-    # Camera
+    # Image Source
     CAMERA_ID = 'camera_id'
+    SOURCE_URI = 'source_uri'
+    SOURCE_TYPE = 'source_type'
 
     CAMERA_ZONE_START_X = 'zone_start_x'
     CAMERA_ZONE_START_Y = 'zone_start_y'

@@ -6,6 +6,7 @@
 # @date: 2019-10-18 20:21
 # @version: 1.0
 #
+import multiprocessing
 import queue
 import time
 from queue import Queue
@@ -14,13 +15,14 @@ from typing import Union
 
 import cv2
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
-from evision.lib.mixin import FailureCountMixin, SaveAndLoadConfigMixin
+from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
+from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
 logger = logutil.get_logger()
@@ -33,9 +35,15 @@ __all__ = [
 ]
 
 
+class ImageSourceHandler(ValueAsStrIntEnum):
+    video_capture = 1
+    video_file = 2
+
+
 class ImageSourceConfig(BaseModel):
     source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
+    handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture
     source_id: str = None
     width: int = None
     height: int = None
@@ -43,20 +51,26 @@ class ImageSourceConfig(BaseModel):
     frame_queue_size: int = 24
     name: str = None
     description: str = None
-    extra: dict = {}
+
+    class Config():
+        extra = Extra.allow
+        arbitrary_types_allowed = True
 
 
-class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
+class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     _MAX_FAIL_TIMES = 100
+
+    # 属性配置
+    required_properties = [Keys.SOURCE_URI, Keys.SOURCE_TYPE]
+    optional_properties = [Keys.WIDTH, Keys.HEIGHT, Keys.FPS, Keys.NAME, Keys.DESCRIPTION]
+    handler_alias = None
 
     @classmethod
     def construct(cls, config: ImageSourceConfig):
-        return cls(source_uri=config.source_uri, source_type=config.source_type,
-                   source_id=config.source_id,
-                   width=config.width, height=config.height,
-                   fps=config.fps, frame_queue_size=config.frame_queue_size,
-                   name=config.name, description=config.description,
-                   **config.extra)
+        handler_cls = cls.get_handler_by_name(config.handler_name) \
+            if config.handler_name is not None \
+            else cls
+        return handler_cls(**config.dict(exclude={'handler_name', }))
 
     def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,
@@ -65,7 +79,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
                  frame_queue_size: int = 24,
                  name: str = None, description: str = None, **kwargs):
         FailureCountMixin.__init__(self)
-        SaveAndLoadConfigMixin.__init__(self)
+        PropertyHandlerMixin.__init__(self)
 
         self.__image_source_inited = False
         self._lock = RLock()
@@ -91,7 +105,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         self._frame_queue = Queue(frame_queue_size)
 
         # 图像源配置信息
-        self.source_id = source_id if source_id else CacheUtil.random_id()
+        self.source_id = source_id if source_id else CacheUtil.random_string(8)
         self.description = description
         self.debug = True if kwargs and kwargs.get('debug') else False
 
@@ -244,8 +258,8 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
     def info(self):
         return {
             Keys.ID: self.source_id,
-            Keys.SOURCE: self.source_uri,
-            Keys.TYPE: self.source_type.value,
+            Keys.SOURCE_URI: self.source_uri,
+            Keys.SOURCE_TYPE: self.source_type.value,
             Keys.NAME: self.name,
             Keys.DESCRIPTION: self.description
         }
@@ -255,7 +269,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
         if self.source_uri is None or self.source_type is None:
             raise ValueError('Invalid video source={} or type={}'.format(
                 self.source_uri, self.source_type))
-        return (self.source_uri, self.source_type)
+        return self.source_uri, self.source_type
 
     def set_name_description(self, name, description):
         if self.name == name and self.description == description:
@@ -269,31 +283,16 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, SaveAndLoadConfigMixin):
 
     def random_frame_id(self):
         """ 生成随机图像帧ID"""
-        return '{}-{:d}'.format(self.name, int(time.time()))
+        return '{}-{:d}'.format(self.source_id, int(1000 * time.time()))
 
     def get_config(self):
         if not self.__image_source_inited:
             return None, {}
-        _properties = self.get_properties()
+        _properties = self.properties
         if _properties is None:
             _properties = {}
         _properties.update({'id': self.source_id})
         return self.config_section, _properties
-
-    def get_properties(self):
-        _source_type = self.source_type.value \
-            if isinstance(self.source_type, ImageSourceType) \
-            else self.source_type
-
-        return {
-            Keys.SOURCE: self.source_uri,
-            Keys.TYPE: _source_type,
-            Keys.WIDTH: self.width,
-            Keys.HEIGHT: self.height,
-            Keys.FPS: self.fps,
-            Keys.NAME: self.name,
-            Keys.DESCRIPTION: self.description,
-        }
 
 
 class VideoCaptureSource(BaseImageSource):
@@ -304,6 +303,8 @@ class VideoCaptureSource(BaseImageSource):
     - 本地视频文件：ImageSourceType.VIDEO_FILE
     """
     source: cv2.VideoCapture
+
+    handler_alias = ImageSourceHandler.video_capture
 
     @staticmethod
     def validate_source(source_uri, source_type, release=True):
@@ -378,6 +379,8 @@ class VideoCaptureSource(BaseImageSource):
 
 
 class VideoFileImageSource(VideoCaptureSource):
+    handler_alias = ImageSourceHandler.video_file
+
     def __init__(self, **kwargs):
         self.endless = kwargs.pop('endless') if 'endless' in kwargs else False
         super().__init__(**kwargs)

@@ -6,10 +6,9 @@
 # @author: Chen Shijiang(chenshijiang@evision.ai)
 # @date: 2019-10-18 10:29
 # @version: 1.0
-#
-from enum import IntEnum
 
 from evision.lib.log import logutil
+from evision.lib.util.types import ValueAsStrIntEnum
 
 logger = logutil.get_logger()
 
@@ -19,7 +18,7 @@ __all__ = [
 ]
 
 
-class ImageSourceType(IntEnum):
+class ImageSourceType(ValueAsStrIntEnum):
     """ Identify video source type
     """
     # 网络摄像头
