@@ -105,7 +105,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         self._frame_queue = Queue(frame_queue_size)
 
         # 图像源配置信息
-        self.source_id = source_id if source_id else CacheUtil.random_id()
+        self.source_id = source_id if source_id else CacheUtil.random_string(8)
         self.description = description
         self.debug = True if kwargs and kwargs.get('debug') else False
 
@@ -283,7 +283,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
     def random_frame_id(self):
         """ 生成随机图像帧ID"""
-        return '{}-{:d}'.format(self.name, int(time.time()))
+        return '{}-{:d}'.format(self.source_id, int(1000 * time.time()))
 
     def get_config(self):
         if not self.__image_source_inited:
