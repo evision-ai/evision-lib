@@ -287,7 +287,7 @@ class ImageFrame(object):
         self.zoom_ratio = zoom_ratio
         self.zone = zone
 
-        self.timestamp = int(time.time())
+        self.timestamp = time.time_ns()
         self.extras = {}
 
     @decorator.CachedProperty
