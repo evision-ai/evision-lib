@@ -6,16 +6,16 @@
 # @date: 2019-10-18 20:21
 # @version: 1.0
 #
-import multiprocessing
+import pickle
 import queue
 import time
-from queue import Queue
 from threading import Lock, RLock
 from typing import Union
 
 import cv2
 import numpy as np
 from pydantic import BaseModel, Extra
+from walrus import Database
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
@@ -55,6 +55,54 @@ class ImageSourceConfig(BaseModel):
     class Config():
         extra = Extra.allow
         arbitrary_types_allowed = True
+
+
+class RedisQueue(object):
+    def __init__(self, key, queue_size):
+        self.queue_size = queue_size
+        self.client = Database()
+        self.key = key
+        self.queue = self.client.List(key)
+
+    def put(self, frame: np.ndarray):
+        pipe = self.client.pipeline()
+        pipe.lpush(self.key, pickle.dumps(frame))
+        pipe.ltrim(self.key, 0, self.queue_size)
+        pipe.execute()
+
+    def empty(self):
+        return self.queue is None or not self.queue
+
+    def size(self):
+        return len(self.queue)
+
+    def peek(self):
+        pipe = self.client.pipeline()
+        pipe.llen(self.key)
+        pipe.lindex(self.key, 0)
+        size, item = pipe.execute()
+        if size == 0:
+            return None
+        return pickle.loads(item)
+
+    def get(self, expected_size=1):
+        pipe = self.client.pipeline()
+        pipe.llen(self.key)
+        pipe.lrange(self.key, 0, expected_size)
+        size, items = pipe.execute()
+        if size < expected_size:
+            return None
+        return [pickle.loads(item) for item in items]
+
+    def lrange(self, size=1):
+        pipe = self.client.pipeline()
+        pipe.llen(self.key)
+        pipe.lrange(self.key, 0, size)
+        len_queue, items = pipe.execute()
+        return len_queue, [pickle.loads(item) for item in items]
+
+    def destroy(self):
+        self.client.delete(self.key)
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
@@ -102,10 +150,11 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         ThreadWrapper.__init__(self, exclusive_init_lock=self._lock, name=name,
                                interval=self.interval, **kwargs)
 
-        self._frame_queue = Queue(frame_queue_size)
-
         # 图像源配置信息
         self.source_id = source_id if source_id else CacheUtil.random_string(8)
+        self._redis_client = Database()
+        self._frame_key = f'frames-{self.source_id}'
+        self._frame_queue = RedisQueue(self._frame_key, frame_queue_size)
         self.description = description
         self.debug = True if kwargs and kwargs.get('debug') else False
 
@@ -120,11 +169,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     def provide(self):
         """图像源向外提供单帧图像"""
         try:
-            if self._frame_queue.empty():
-                return None
-            return self._frame_queue.get()
-        except queue.Empty:
-            logger.warn('Failed getting image frame with empty queue')
+            return self._frame_queue.peek()
         except Exception as e:
             logger.exception('Failed getting image frame: {}', e)
             return None
@@ -132,7 +177,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
     get = provide
 
     def peek(self):
-        if self._frame_queue.empty():
+        if not self._frame_queue:
             return None
         return self.current(block=False)
 
@@ -143,20 +188,17 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         :param block: 是否阻塞
         :param timeout: 最多等待时间
         """
-        if self._frame_queue.empty():
-            return None
-
         if not block:
-            return None if self._frame_queue.qsize() < n_frame \
-                else [self._frame_queue.queue[i] for i in range(n_frame)]
+            return self._frame_queue.get(n_frame)
 
         try:
             must_end = time.time() + timeout
             while time.time() < must_end:
-                if self._frame_queue.qsize() >= n_frame:
+                len_queue, frames = self._frame_queue.lrange(n_frame)
+                if len_queue >= n_frame:
                     # NOTE: 可能取到少于 n_frame 帧图像，不做处理
-                    return [self._frame_queue.queue[i] for i in range(n_frame)]
-                time.sleep(self.interval * (n_frame - self._frame_queue.qsize()))
+                    return frames
+                time.sleep(self.interval * (n_frame - len_queue))
             return None
         except queue.Empty:
             logger.warn('Failed getting current image frame with empty queue')
@@ -171,12 +213,9 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
         self.reset_failure_count()
         try:
-            if self._frame_queue.full():
-                self._frame_queue.get_nowait()
-            self._frame_queue.put_nowait(image_frame)
-        except queue.Empty:
-            pass
-        except queue.Full:
+            self._frame_queue.put(image_frame)
+        except Exception as e:
+            logger.exception('Failed adding image frame', e)
             pass
 
     def read_frame(self):
@@ -294,6 +333,9 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         _properties.update({'id': self.source_id})
         return self.config_section, _properties
 
+    def on_stop(self):
+        self._frame_queue.destroy()
+
 
 class VideoCaptureSource(BaseImageSource):
     """VideoCapture类型的视频源封装
@@ -373,6 +415,7 @@ class VideoCaptureSource(BaseImageSource):
         logger.info('Reload video source={}', self.source)
 
     def on_stop(self):
+        super().on_stop()
         if self.source and self.source.isOpened():
             self.source.release()
             del self.source
