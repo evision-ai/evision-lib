@@ -4,4 +4,4 @@ Reference
 .. toctree::
     :glob:
 
-    evision.lib*
+    evision/lib*
