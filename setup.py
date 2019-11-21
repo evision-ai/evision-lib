@@ -73,7 +73,8 @@ setup(
         'opencv-python',
         'numpy>=1.11.0',
         'fields',
-        'pydantic>=1.0'
+        'pydantic>=1.0',
+        'walrus'
     ],
     extras_require={
         'tornado': [
