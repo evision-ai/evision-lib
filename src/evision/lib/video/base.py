@@ -6,6 +6,7 @@
 # @author: Chen Shijiang(chenshijiang@evision.ai)
 # @date: 2019-10-18 10:29
 # @version: 1.0
+import time
 
 from evision.lib.log import logutil
 from evision.lib.util.types import ValueAsStrIntEnum
@@ -60,3 +61,8 @@ class ImageSourceUtil(object):
         if width < 1 or height < 1:
             raise ValueError('Invalid camera frame size=[{}, {}]'.format(width, height))
         return width, height
+
+    @staticmethod
+    def random_frame_id(source_id):
+        """ 生成随机图像帧ID"""
+        return '{}-{:d}'.format(source_id, int(1000 * time.time()))

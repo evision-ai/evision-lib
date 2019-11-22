@@ -280,10 +280,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             logger.info('[{}} Set name={}, description={}',
                         self.alias, self.name, self.description)
 
-    def random_frame_id(self):
-        """ 生成随机图像帧ID"""
-        return '{}-{:d}'.format(self.source_id, int(1000 * time.time()))
-
     def get_config(self):
         if not self.__image_source_inited:
             return None, {}
