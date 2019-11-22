@@ -73,4 +73,4 @@ class RedisUtil(object):
             if queue is None or queue.empty():
                 time.sleep(0.1)
                 continue
-            mirror.prepend(queue.queue[0])
+            mirror.put(queue.queue[0])

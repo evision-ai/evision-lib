@@ -9,7 +9,7 @@
 import queue
 import time
 from queue import Queue
-from threading import Lock, RLock
+from threading import Lock, RLock, Thread
 from typing import Union
 
 import cv2
@@ -21,6 +21,7 @@ from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
+from evision.lib.util.redis import RedisUtil
 from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import ImageSourceType, ImageSourceUtil
 
@@ -161,6 +162,13 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             logger.warn('Failed getting current image frame with empty queue')
             return None
 
+    def on_start(self):
+        mirror_thread = Thread(target=RedisUtil.mirror_queue,
+                               args=(self._frame_queue, self.frames_key))
+        mirror_thread.daemon = True
+        mirror_thread.start()
+        pass
+
     def process(self):
         """图像源工作进程"""
         image_frame = self.read_frame()
@@ -224,6 +232,10 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             return
         width, height = ImageSourceUtil.check_frame_shape(*value)
         self.width, self.height = width, height
+
+    @property
+    def frames_key(self):
+        return f'frames-{self.source_id}'
 
     @property
     def fps(self):
