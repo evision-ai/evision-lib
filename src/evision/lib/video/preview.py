@@ -8,12 +8,14 @@
 #
 import time
 from threading import Thread
+from typing import Union
 
 import cv2
 
 from evision.lib.entity import ImageFrame, Vertex
 from evision.lib.util import DrawUtil
 from evision.lib.video import BaseImageSource, ImageSourceWrapper
+from evision.lib.video.wrapper import ImageSourceReader
 
 __all__ = [
     'ImageSourcePreview'
@@ -21,12 +23,12 @@ __all__ = [
 
 
 class ImageSourcePreview(Thread):
-    def __init__(self, source: [BaseImageSource, ImageSourceWrapper]):
+    def __init__(self, source: Union[BaseImageSource, ImageSourceReader]):
         Thread.__init__(self)
         self.source = source
 
         _type_source = type(source)
-        if _type_source == ImageSourceWrapper:
+        if _type_source == ImageSourceReader or _type_source == ImageSourceWrapper:
             self.process = self._process_source_wrapper
         else:
             self.process = lambda x: x
@@ -44,7 +46,7 @@ class ImageSourcePreview(Thread):
         return frame
 
     def run(self):
-        while self.source.is_alive():
+        while True:
             frame = self.source.provide()
             if frame is None:
                 time.sleep(0.1)

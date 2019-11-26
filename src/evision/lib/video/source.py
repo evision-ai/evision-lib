@@ -15,6 +15,7 @@ from typing import Union
 import cv2
 import numpy as np
 from pydantic import BaseModel, Extra
+from walrus import Database
 
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
@@ -163,11 +164,18 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             return None
 
     def on_start(self):
-        mirror_thread = Thread(target=RedisUtil.mirror_queue,
-                               args=(self._frame_queue, self.frames_key))
+        mirror_thread = Thread(target=RedisUtil.mirror_arrays,
+                               args=(self._frame_queue, self.frames_key, self.fps))
         mirror_thread.daemon = True
         mirror_thread.start()
-        pass
+        logger.info('Mirroring {}[{}] frames to redis queue: {}',
+                    self.name, self.source_id, self.frames_key)
+
+    def on_stop(self):
+        logger.info('Removing redis mirroring key for {}[{}] : {}',
+                    self.name, self.source_id, self.frames_key)
+        RedisUtil.remove_key(self.frames_key)
+        assert not Database().exists(self.frames_key)
 
     def process(self):
         """图像源工作进程"""
@@ -226,6 +234,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
     @frame_size.setter
     def frame_size(self, value):
+        logger.info('Setting frame size to {}', value)
         assert value and hasattr(value, '__len__') and len(value) == 2
         width, height = value
         if width == self.width and height == self.height:
@@ -235,7 +244,12 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
     @property
     def frames_key(self):
-        return f'frames-{self.source_id}'
+        return f'frames:{self.source_id}'
+
+    @property
+    def frame_shape(self):
+        w, h = self.frame_size
+        return h, w, 3
 
     @property
     def fps(self):
@@ -348,9 +362,11 @@ class VideoCaptureSource(BaseImageSource):
         self.frame_size = (self.source.get(cv2.CAP_PROP_FRAME_WIDTH),
                            self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.source.get(cv2.CAP_PROP_FPS)
-        logger.info('Connected to image source[{}], type={}，size=({}), fps={}',
+        logger.info('Connected to image source[{}], type={}，size={}, fps={}',
                     self.source_uri, self.source_type,
                     self.frame_size, self.fps)
+
+        super().on_start()
 
     def read_frame(self):
         """从视频源直接获取图像帧"""
@@ -383,6 +399,8 @@ class VideoCaptureSource(BaseImageSource):
         if self.source and self.source.isOpened():
             self.source.release()
             del self.source
+
+        super().on_stop()
 
 
 class VideoFileImageSource(VideoCaptureSource):

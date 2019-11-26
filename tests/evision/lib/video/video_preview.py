@@ -6,21 +6,33 @@
 # @date: 2018-07-21 15:54
 # @version: 1.0
 #
+import logging
+import time
 
-from evision.lib.video import *
-from evision.lib.video.source import VideoFileImageSource
+from evision.lib.log import logutil
+from evision.lib.video import ImageSourcePreview, ImageSourceType
+from evision.lib.video.source import VideoCaptureSource, VideoFileImageSource
+from evision.lib.video.wrapper import ImageSourceReader, ImageSourceWrapperConfig
 
 width, height = 960, 540
 
+logger = logutil.get_logger()
+logger.setLevel(logging.DEBUG)
+
 
 def _open_image_source(source):
+    source.daemon = True
+    source.start()
+
+    while not source.running:
+        logger.debug('Waiting for source initializing...')
+        time.sleep(0.5)
+
     wrapper_config = ImageSourceWrapperConfig(
         width=width, height=height,
         zone_start_x=80, zone_start_y=70, zone_width=800, zone_height=400)
-    wrapper = ImageSourceWrapper(source, wrapper_config)
+    wrapper = ImageSourceReader(source, wrapper_config)
 
-    source.daemon = True
-    source.start()
     preview = ImageSourcePreview(wrapper)
     preview.run()
     source.stop()
@@ -50,6 +62,6 @@ def with_video_file():
 
 
 if __name__ == '__main__':
-    with_ip_camera()
-    # with_video_file()
+    # with_ip_camera()
+    with_video_file()
     pass

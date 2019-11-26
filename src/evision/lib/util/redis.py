@@ -33,6 +33,7 @@ class RedisQueue(object):
             pipe = self.client.pipeline()
             pipe.lpush(self.key, self.serialize(frame))
             pipe.ltrim(self.key, 0, self.queue_size)
+            pipe.expire(self.key, 86400)
             pipe.execute()
 
     def empty(self):
@@ -75,8 +76,13 @@ class RedisQueue(object):
 class RedisNdArrayQueue(RedisQueue):
     def __init__(self, key, size, frame_shape, dtype=np.uint8):
         super().__init__(key, size)
-        self.frame_shape = frame_shape
-        self.dtype = dtype
+
+        if frame_shape is not None:
+            if None in frame_shape:
+                raise ValueError(f'Invalid frame shape: {frame_shape}')
+            print(frame_shape)
+            self.frame_shape = tuple(int(_) for _ in frame_shape)
+            self.dtype = dtype
 
     @staticmethod
     def serialize(array):
@@ -94,6 +100,10 @@ class RedisNdArrayQueueReader(RedisNdArrayQueue):
 class RedisNdArrayQueueWriter(RedisNdArrayQueue):
     def __init__(self, key, size):
         super().__init__(key, size, None)
+
+    peek = None
+    get = None
+    lrange = None
 
 
 class RedisUtil(object):
