@@ -11,21 +11,29 @@ import pickle
 import time
 from queue import Queue
 
+import numpy as np
+from numpy import ndarray as nda
 from walrus import Database
 
 
 class RedisQueue(object):
-    def __init__(self, key, queue_size):
-        self.queue_size = queue_size
+    def __init__(self, key, queue_size=-1):
+        self.queue_size = int(queue_size)
         self.client = Database()
         self.key = key
         self.queue = self.client.List(key)
 
+    serialize = pickle.dumps
+    deserialize = pickle.loads
+
     def put(self, frame):
-        pipe = self.client.pipeline()
-        pipe.lpush(self.key, pickle.dumps(frame))
-        pipe.ltrim(self.key, 0, self.queue_size)
-        pipe.execute()
+        if self.queue_size <= 0:
+            self.queue.prepend(self.serialize(frame))
+        else:
+            pipe = self.client.pipeline()
+            pipe.lpush(self.key, self.serialize(frame))
+            pipe.ltrim(self.key, 0, self.queue_size)
+            pipe.execute()
 
     def empty(self):
         return self.queue is None or not self.queue
@@ -40,7 +48,7 @@ class RedisQueue(object):
         size, item = pipe.execute()
         if size == 0:
             return None
-        return pickle.loads(item)
+        return self.deserialize(item)
 
     def get(self, expected_size=1):
         if expected_size < 1:
@@ -51,26 +59,63 @@ class RedisQueue(object):
         size, items = pipe.execute()
         if size < expected_size:
             return None
-        return [pickle.loads(item) for item in items]
+        return [self.deserialize(item) for item in items]
 
     def lrange(self, expected_size=1):
         pipe = self.client.pipeline()
         pipe.llen(self.key)
         pipe.lrange(self.key, 0, expected_size - 1)
         len_queue, items = pipe.execute()
-        return len_queue, [pickle.loads(item) for item in items]
+        return len_queue, [self.deserialize(item) for item in items]
 
     def destroy(self):
         self.client.delete(self.key)
+
+
+class RedisNdArrayQueue(RedisQueue):
+    def __init__(self, key, size, frame_shape, dtype=np.uint8):
+        super().__init__(key, size)
+        self.frame_shape = frame_shape
+        self.dtype = dtype
+
+    @staticmethod
+    def serialize(array):
+        return nda.tobytes(array)
+
+    def deserialize(self, array_bytes):
+        return np.frombuffer(array_bytes, dtype=self.dtype).reshape(self.frame_shape)
+
+
+class RedisNdArrayQueueReader(RedisNdArrayQueue):
+    put = None
+    destroy = None
+
+
+class RedisNdArrayQueueWriter(RedisNdArrayQueue):
+    def __init__(self, key, size):
+        super().__init__(key, size, None)
 
 
 class RedisUtil(object):
     @staticmethod
     def mirror_queue(queue: Queue, key, size=24):
         mirror = RedisQueue(key, size)
-        print(f'mirroring to redis list: {key}')
         while True:
             if queue is None or queue.empty():
                 time.sleep(0.1)
                 continue
             mirror.put(queue.queue[0])
+
+    @staticmethod
+    def mirror_arrays(queue: Queue, key, size=24):
+        mirror = RedisNdArrayQueueWriter(key, size)
+        while True:
+            if queue is None or queue.empty():
+                time.sleep(0.1)
+                continue
+            mirror.put(queue.queue[0])
+
+    @staticmethod
+    def remove_key(key):
+        if Database().exists(key):
+            Database().delete(key)
