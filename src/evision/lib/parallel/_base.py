@@ -111,7 +111,6 @@ class ParallelWrapperMixin(object):
             return
         SysUtil.disable_sys_stdin()
 
-        self._running = True
         try:
             if self._stop_event.is_set():
                 return
@@ -121,6 +120,7 @@ class ParallelWrapperMixin(object):
                              self.name, self.__class__, e)
             self._stop_event.set()
 
+        self._running = True
         while not self._stop_event.is_set():
             tick = time.perf_counter()
             try:
