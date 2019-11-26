@@ -28,8 +28,9 @@ __wrapper_config__ = ImageSourceWrapperConfig(
 
 # Modify here !!!
 source = VideoFileImageSource(
-    # source_uri=__local_video__, source_type=ImageSourceType.VIDEO_FILE, name='Test-File',
-    source_uri=__ip_camera__, source_type=ImageSourceType.IP_CAMERA, name='Camera-189',
+    source_uri=__local_video__, source_type=ImageSourceType.VIDEO_FILE, name='Test-File',
+    # source_uri=__ip_camera__, source_type=ImageSourceType.IP_CAMERA, name='Camera-189',
+    # source_uri=0, source_type=ImageSourceType.USB_CAMERA, name='Local-USB',
     endless=True)
 
 

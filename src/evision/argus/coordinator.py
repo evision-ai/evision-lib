@@ -18,7 +18,7 @@ from evision.lib.parallel import ProcessWrapper
 from evision.lib.util import DictUtil
 from evision.lib.video import BaseImageSource, ImageSourceConfig
 from evision.lib.video import ImageSourceType, ImageSourceUtil
-from evision.lib.video import ImageSourceWrapper
+from evision.lib.video.wrapper import ImageSourceReader
 
 logger = logutil.get_logger()
 
@@ -95,7 +95,7 @@ class ArgusCoordinator(ProcessWrapper):
             app_type: Type[ArgusApp] = None,
             source_type: Type[BaseImageSource] = None) -> ArgusApplication:
         image_source = self.__source_coordinator.register(app_config.image_source_config, source_type)
-        source_wrapper = ImageSourceWrapper(image_source, app_config.source_wrapper_config)
+        source_wrapper = ImageSourceReader(image_source, app_config.source_wrapper_config)
         if app_type:
             app_config.app_handler = app_type.handler_alias
         app = ArgusApp.construct(app_config, wrapper=source_wrapper)

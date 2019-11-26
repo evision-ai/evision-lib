@@ -32,7 +32,8 @@ __all__ = [
     'BaseImageSource',
     'ImageSourceConfig',
     'VideoCaptureSource',
-    'VideoFileImageSource'
+    'VideoFileImageSource',
+    'ImageSourceHandler'
 ]
 
 

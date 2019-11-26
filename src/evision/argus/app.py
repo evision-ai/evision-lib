@@ -20,7 +20,8 @@ from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
 from evision.lib.util.types import ValueAsStrIntEnum
 from evision.lib.video import BaseImageSource, ImageSourceConfig
-from evision.lib.video import ImageSourceWrapper, ImageSourceWrapperConfig
+from evision.lib.video import ImageSourceWrapperConfig
+from evision.lib.video.wrapper import ImageSourceReader
 
 logger = logutil.get_logger()
 
@@ -46,7 +47,7 @@ class ArgusApplicationConfig(BaseModel):
 
 
 class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
-    source: ImageSourceWrapper
+    source: ImageSourceReader
     frame_batch: int
 
     # 是否必须配置数据源，在启动应用时检查
@@ -55,16 +56,16 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
     @classmethod
     def construct(cls, config: ArgusApplicationConfig,
                   source: BaseImageSource = None,
-                  wrapper: ImageSourceWrapper = None):
+                  wrapper: ImageSourceReader = None):
         if not source and not wrapper:
             raise ValueError('Image source not configured for argus application')
         if not wrapper:
-            wrapper = ImageSourceWrapper(source, config.source_wrapper_config)
+            wrapper = ImageSourceReader(source, config.source_wrapper_config)
         app_class = cls.get_handler_by_name(config.app_handler) if config.app_handler is not None else cls
         return app_class(wrapper,
                          **config.dict(exclude={'image_source_config', 'source_wrapper_config', 'app_handler'}))
 
-    def __init__(self, source_wrapper: ImageSourceWrapper,
+    def __init__(self, source_wrapper: ImageSourceReader,
                  frame_batch: int = 1, fps: float = 24,
                  name: str = None, paths: Union[str, list, None] = None,
                  answer_sigint: bool = False, answer_sigterm: bool = False, *args, **kwargs):
@@ -89,21 +90,9 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
         """
         raise NotImplementedError
 
-    def init(self):
-        super().init()
-        logger.debug('Application={} initializing...', self.name)
-        if self.source and not self.source.is_alive():
-            logger.debug('Opening image source: {}', self.source.name)
-            self.source.open_image_source()
-
-    def is_inited(self):
-        return True if not self.source else self.source.is_alive()
-
     def on_start(self):
         if self.__require_image_source__ and not self.source:
             raise ValueError(f'Failed starting app={self.name}, no image source provided')
-        if not self.source.is_alive():
-            raise ValueError(f'Failed starting app={self.name}, image source not opened')
 
 
 ArgusApplication = ArgusApp

@@ -121,6 +121,10 @@ class ImageSourceReader(object):
 
         logger.info('Waiting for image source[{}] initializing...', image_source.name)
         while not image_source.running:
+            with image_source.read_lock:
+                if not image_source.running and not image_source.is_alive():
+                    image_source.daemon = True
+                    image_source.start()
             time.sleep(1)
 
         self._frame_queue = RedisNdArrayQueueReader(
