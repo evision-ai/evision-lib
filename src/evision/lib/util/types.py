@@ -12,7 +12,6 @@ from enum import IntEnum
 __all__ = [
     'TypeUtil',
     'ValueAsStrIntEnum',
-    'BaseModelWithExtras'
 ]
 
 
