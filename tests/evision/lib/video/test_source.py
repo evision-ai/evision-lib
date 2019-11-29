@@ -11,8 +11,8 @@ from evision.lib.video import *
 
 
 def test_image_source_handler_names():
-    assert BaseImageSource.handlers()
-    assert VideoCaptureSource.handlers()
+    assert BaseImageSource.handlers
+    assert VideoCaptureSource.handlers
     assert BaseImageSource.get_handler_by_name('video_capture') == VideoCaptureSource
     assert BaseImageSource.get_handler_by_name(ImageSourceHandler.video_capture) == VideoCaptureSource
     assert BaseImageSource.get_handler_by_name('video_file') == VideoFileImageSource
