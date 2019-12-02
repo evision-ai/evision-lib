@@ -16,11 +16,34 @@ import numpy as np
 from pydantic import BaseModel, root_validator, validator
 
 __all__ = [
+    'Size', 'Shape',
     'Vertex', 'Vector',
     'Zone',
     'ImageFrame',
     'Detection'
 ]
+
+
+class Shape(BaseModel):
+    width: int
+    height: int
+
+    @validator('width', 'height')
+    def ensure_positive(cls, v):
+        assert v > 0, 'Value should be positive'
+        return v
+
+    def to_list(self):
+        return [self.width, self.height]
+
+    def to_tuple(self):
+        return self.width, self.height
+
+    def __str__(self):
+        return '({}, {})'.format(self.width, self.height)
+
+
+Size = Shape
 
 
 class Vertex(BaseModel):

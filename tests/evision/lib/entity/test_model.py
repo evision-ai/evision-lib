@@ -14,7 +14,7 @@ import cv2
 import numpy as np
 import pytest
 
-from evision.lib.entity import ImageFrame, Vertex, Zone
+from evision.lib.entity import ImageFrame, Shape, Vertex, Zone
 from evision.lib.log import logutil
 
 logger = logutil.get_logger()
@@ -25,6 +25,18 @@ def get_test_image():
     assert test_image is not None
     test_image = cv2.resize(test_image, (540, 800))
     return test_image
+
+
+def test_shape():
+    width, height = 100, 40
+    shape = Shape(width=width, height=height)
+    assert isinstance(shape, Shape)
+    assert shape.width == width
+    assert shape.height == height
+    assert shape.to_list() == [width, height]
+    assert shape.to_tuple() == (width, height)
+    assert str(shape) == f'({width}, {height})'
+    Shape(width=1, height=-1)
 
 
 def test_single_vertex():
