@@ -29,14 +29,14 @@ def get_test_image():
 
 def test_single_vertex():
     x, y = 100, 50
-    vertex = Vertex(x, y)
+    vertex = Vertex(x=x, y=y)
 
     assert vertex.to_list() == [x, y]
     assert vertex.to_tuple() == (x, y)
     assert str(vertex) == '({}, {})'.format(x, y)
 
     # __eq__
-    assert vertex == Vertex(x, y)
+    assert vertex == Vertex(x=x, y=y)
     assert vertex == [x, y]
     assert vertex == (x, y)
 
@@ -50,26 +50,24 @@ def test_single_vertex():
     vertex = vertex.times(2)
     assert vertex == [x * 2, y * 2]
 
-    vertex = Vertex(0, 0)
+    vertex = Vertex(x=0, y=0)
     assert len(vertex) == 2
-    vertex = Vertex(0, None)
-    assert len(vertex) == 0
 
 
 def test_multiple_vertex():
     x, y = 100, 50
-    vertex = Vertex(x, y)
+    vertex = Vertex(x=x, y=y)
 
-    other = Vertex(-50, 50)
+    other = Vertex(x=-50, y=50)
 
-    assert (vertex + other) == Vertex(50, 100)
-    assert (vertex - other) == Vertex(150, 0)
+    assert (vertex + other) == Vertex(x=50, y=100)
+    assert (vertex - other) == Vertex(x=150, y=0)
 
 
 def test_zone():
     x, y, x2, y2 = 30, 20, 930, 520
     width, height = 900, 500
-    zone = Zone(x, y, end_x=x2, end_y=y2)
+    zone = Zone(start_x=x, start_y=y, end_x=x2, end_y=y2)
     assert zone.width == width
     assert zone.height == height
     assert zone.area == width * height
@@ -92,28 +90,28 @@ def test_zone_expanding():
     zone_width, zone_height = 100, 50
 
     x, y = 400, 225
-    zone = Zone(x, y, width=zone_width, height=zone_height)
+    zone = Zone(start_x=x, start_y=y, width=zone_width, height=zone_height)
     start, end = zone.expanded_anchor(width, height,
                                       aspect_ratio=0.5, max_expand_ratio=0.5)
     logger.debug('expand vertex fro zone={}: start={}, end={}', zone, start, end)
     assert start == (350, 200)
     assert end == (550, 300)
 
-    zone = Zone(0, 0, width=zone_width, height=zone_height)
+    zone = Zone(start_x=0, start_y=0, width=zone_width, height=zone_height)
     start, end = zone.expanded_anchor(width, height,
                                       aspect_ratio=0.5, max_expand_ratio=0.5)
     logger.debug('expand vertex fro zone={}: start={}, end={}', zone, start, end)
     assert start == (0, 0)
     assert end == (200, 100)
 
-    zone = Zone(30, 20, width=zone_width, height=zone_height)
+    zone = Zone(start_x=30, start_y=20, width=zone_width, height=zone_height)
     start, end = zone.expanded_anchor(width, height,
                                       aspect_ratio=0.5, max_expand_ratio=0.5)
     logger.debug('expand vertex fro zone={}: start={}, end={}', zone, start, end)
     assert start == (0, 0)
     assert end == (200, 100)
 
-    zone = Zone(0, 0, width=zone_width, height=zone_height)
+    zone = Zone(start_x=0, start_y=0, width=zone_width, height=zone_height)
     start, end = zone.expanded_anchor(width, height,
                                       bias_x=400, bias_y=225,
                                       aspect_ratio=0.5, max_expand_ratio=0.5)
@@ -131,7 +129,7 @@ def test_no_zoom_frame():
     cv2.imwrite('test.png', test_image)
     os.remove('test.png')
     padding = 30
-    zone = Zone(padding, padding,
+    zone = Zone(start_x=padding, start_y=padding,
                 end_x=width - padding, end_y=height - padding)
     frame = ImageFrame('source_id', 'frame_id', frame=test_image,
                        zoom_ratio=1, zone=zone)
@@ -160,14 +158,15 @@ def test_zoomed_frame():
     resize_height = int(height * zoom_ratio)
     resize_width = int(width * zoom_ratio)
     padding_x, padding_y = 30, 50
-    zone = Zone(padding_x, padding_y,
+    zone = Zone(start_x=padding_x, start_y=padding_y,
                 end_x=resize_width - padding_x, end_y=resize_height - padding_y)
     frame = ImageFrame('source_id', 'frame_id', frame=test_image,
                        zoom_ratio=zoom_ratio, zone=zone)
 
-    extract_start = Vertex(100, 100)
-    extract_shape = Vertex(130, 100)
-    extract = Zone(*extract_start, *extract_shape)
+    extract_start = Vertex(x=100, y=100)
+    extract_shape = Vertex(x=130, y=100)
+    extract = Zone(start_x=extract_start.x, start_y=extract_start.y,
+                   width=extract_shape.x, height=extract_shape.y)
 
     assert frame.is_zoomed
     assert frame.size

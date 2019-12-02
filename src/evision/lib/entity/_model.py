@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-# 图像描述数据结构封装
-# @author: Chen Shijiang (chenshijiang@evision.ai)
-# @date: 2018-06-07 14:46
+#
+# Copyright 2019 eVision.ai Inc. All Rights Reserved.
+#
+# @author: Chen Shijiang(chenshijiang@evision.ai)
+# @date: 2019-11-29 18:23
 # @version: 1.0
+#
 
 import collections
 import time
+from typing import Union
 
 import cv2
 import numpy as np
-
-from evision.lib import decorator
+from pydantic import BaseModel, root_validator, validator
 
 __all__ = [
     'Vertex', 'Vector',
@@ -20,10 +23,9 @@ __all__ = [
 ]
 
 
-class Vertex(object):
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+class Vertex(BaseModel):
+    x: Union[int, float]
+    y: Union[int, float]
 
     def to_list(self):
         return [self.x, self.y]
@@ -32,7 +34,7 @@ class Vertex(object):
         return self.x, self.y
 
     def times(self, times):
-        return self.__class__(self.x * times, self.y * times)
+        return self.__class__(x=self.x * times, y=self.y * times)
 
     @classmethod
     def _parse(cls, value):
@@ -41,7 +43,7 @@ class Vertex(object):
         elif isinstance(value, Vertex):
             return value
         elif isinstance(value, collections.abc.Sequence):
-            return Vertex(value[0], value[1])
+            return Vertex(x=value[0], y=value[1])
         return None
 
     def __str__(self):
@@ -65,84 +67,99 @@ class Vertex(object):
         other = Vertex._parse(other)
         if not other:
             raise ValueError(f'Invalid vertex: {other}')
-        return Vertex(self.x + other.x, self.y + other.y)
+        return Vertex(x=self.x + other.x, y=self.y + other.y)
 
     def __sub__(self, other):
         other = Vertex._parse(other)
         if not other:
             raise ValueError(f'Invalid vertex: {other}')
-        return Vertex(self.x - other.x, self.y - other.y)
+        return Vertex(x=self.x - other.x, y=self.y - other.y)
 
     def __mul__(self, other):
         other = Vertex._parse(other)
         if not other:
             raise ValueError(f'Invalid vertex: {other}')
-        return Vertex(self.x * other.x, self.y * other.y)
+        return Vertex(x=self.x * other.x, y=self.y * other.y)
 
 
 Vector = Vertex
 
 
-class Zone(object):
+class Zone(BaseModel):
     # __aspect_ratio = 1.25  # 5 / 4
-    __aspect_ratio = 1  # 1 / 1
-    __expand_ratio = 0.33
+    __aspect_ratio: int = 1  # 1 / 1
+    __expand_ratio: int = 0.33
+    start_x: int
+    start_y: int
+    width: int = None
+    height: int = None
+    end_x: int = None
+    end_y: int = None
+    bias_x: int = 0
+    bias_y: int = 0
 
-    def __init__(self, start_x, start_y,
-                 width=None, height=None,
-                 end_x=None, end_y=None,
-                 bias_x=0, bias_y=0):
-        self.start_x = int(start_x)
-        self.start_y = int(start_y)
-        if width is not None and height is not None:
-            self.width = int(width)
-            self.height = int(height)
-            self.end_x = self.start_x + self.width
-            self.end_y = self.start_y + self.height
-        elif end_x is not None and end_y is not None:
-            self.end_x = int(end_x)
-            self.end_y = int(end_y)
-            self.width = self.end_x - self.start_x
-            self.height = self.end_y - self.start_y
+    class Config:
+        arbitrary_types_allowed = True
+        # keep_untouched = (property,)
+
+    @root_validator(pre=True)
+    def ensure_arguments(cls, values):
+        start_x, start_y = values['start_x'], values['start_y']
+
+        if 'width' in values and 'height' in values:
+            width, height = values['width'], values['height']
+            values['end_x'] = start_x + width
+            values['end_y'] = start_y + height
+        elif 'end_x' in values and 'end_y' in values:
+            end_x, end_y = values['end_x'], values['end_y']
+            values['width'] = end_x - start_x
+            values['height'] = end_y - start_y
         else:
             raise ValueError('Argument pair (width, height) or (end_x, end_y) '
-                             'should be fully set. provided width={}, '
-                             'height={}, end_x={}, end_y={}',
-                             width, height, end_x, end_y)
-        self.bias_x = bias_x
-        self.bias_y = bias_y
+                             'should be fully set')
+        return values
 
-    @decorator.CachedProperty
+    @validator('start_x', 'start_y', allow_reuse=True)
+    def ensure_non_negative(cls, v):
+        assert v >= 0, 'should be non-negative'
+        return v
+
+    @validator('end_x', 'end_y', 'width', 'height', allow_reuse=True)
+    def ensure_positive(cls, v):
+        assert v > 0, 'should be non-negative'
+        return v
+
+    @property
     def area(self):
         return self.width * self.height
 
-    @decorator.CachedProperty
+    @property
     def start_point(self):
-        return Vertex(self.start_x, self.start_y)
+        return Vertex(x=self.start_x, y=self.start_y)
 
-    @decorator.CachedProperty
+    @property
     def end_point(self):
-        return Vertex(self.end_x, self.end_y)
+        return Vertex(x=self.end_x, y=self.end_y)
 
     top_left = start_point
     bottom_right = end_point
 
-    @decorator.CachedProperty
+    @property
     def top_right(self):
-        return Vertex(self.end_x, self.start_y)
+        return Vertex(x=self.end_x, y=self.start_y)
 
-    @decorator.CachedProperty
+    @property
     def bottom_left(self):
-        return Vertex(self.start_x, self.end_y)
+        return Vertex(x=self.start_x, y=self.end_y)
 
-    @decorator.CachedProperty
+    @property
     def center(self):
-        return Vertex(self.start_x + int(self.width / 2),
-                      self.start_y + int(self.height / 2))
+        return Vertex(x=self.start_x + int(self.width / 2),
+                      y=self.start_y + int(self.height / 2))
 
     @property
     def bias(self):
-        return Vector(self.bias_x, self.bias_y)
+        return Vector(x=self.bias_x, y=self.bias_y)
 
     @bias.setter
     def bias(self, value):
@@ -150,7 +167,7 @@ class Zone(object):
         assert isinstance(value, collections.abc.Iterable)
         self.bias_x, self.bias_y = value
 
-    @decorator.CachedProperty
+    @property
     def shape(self):
         return self.width, self.height
 
@@ -169,7 +186,7 @@ class Zone(object):
         self.end_x = self.start_x + self.width
         self.end_y = self.start_y + self.height
 
-    @decorator.CachedProperty
+    @property
     def description(self):
         return {
             'x': self.start_x,
@@ -261,7 +278,7 @@ class Zone(object):
         end_y = start_y + resize_height
         if bias_x != 0 or bias_y != 0:
             self.move(-bias_x, -bias_y)
-        return Vertex(start_x, start_y), Vertex(end_x, end_y)
+        return Vertex(x=start_x, y=start_y), Vertex(x=end_x, y=end_y)
 
     def __str__(self):
         return '[{}, {}], shape={}'.format(
@@ -290,23 +307,23 @@ class ImageFrame(object):
         self.timestamp = int(time.time())
         self.extras = {}
 
-    @decorator.CachedProperty
+    @property
     def is_zoomed(self):
         return self.zoom_ratio > 0 and self.zoom_ratio != 1
 
-    @decorator.CachedProperty
+    @property
     def size(self):
         h, w, _ = self.frame.shape
         return w, h
 
-    @decorator.CachedProperty
+    @property
     def bias(self):
         if not self.zone:
             return 0, 0
         else:
             return self.zone.start_x, self.zone.start_y
 
-    @decorator.CachedProperty
+    @property
     def resized_size(self):
         """缩放后的图像尺寸：（宽，高）"""
         if not self.is_zoomed:
@@ -314,7 +331,7 @@ class ImageFrame(object):
         else:
             return tuple(int(_ * self.zoom_ratio) for _ in self.size)
 
-    @decorator.CachedProperty
+    @property
     def resized_frame(self):
         """获取缩放后的图像帧"""
         if not self.is_zoomed:
@@ -323,12 +340,12 @@ class ImageFrame(object):
             return cv2.resize(self.frame, self.resized_size,
                               interpolation=cv2.INTER_CUBIC)
 
-    @decorator.CachedProperty
+    @property
     def detection_zone(self):
         """检测区域"""
         return self.zone.get_zone(self.resized_frame) if self.zone else self.resized_frame
 
-    @decorator.CachedProperty
+    @property
     def detection_zone_size(self):
         """检测区域尺寸"""
         h, w, _ = self.detection_zone.shape
@@ -355,18 +372,23 @@ class ImageFrame(object):
 
 class Detection(Zone):
     """一个检测结果"""
+    rotation: float
+    feature: np.ndarray
+    start_time: float
+    end_time: float = None
 
-    def __init__(self, start_x, start_y, end_x, end_y, rotation, *feature,
-                 start_time=None):
-        Zone.__init__(self, start_x, start_y, end_x=end_x, end_y=end_y)
+    class Config:
+        arbitrary_types_allowed = True
 
-        self.rotation = float(rotation)
-        self.feature = np.array(feature)
+    @validator('end_time', allow_reuse=True)
+    def set_end_time(cls, v):
+        return v or time.perf_counter()
 
-        self.start_time = start_time
-        self.end_time = time.perf_counter()
+    @validator('feature', allow_reuse=True)
+    def set_feature(cls, v):
+        return np.array(v)
 
-    @decorator.CachedProperty
+    @property
     def elapsed(self):
         """检测耗费时间，单位为ms"""
         if self.start_time is None:

@@ -40,7 +40,7 @@ class ImageSourcePreview(Thread):
         DrawUtil.put_text(frame, 'Resized frame shape: {}'.format(image_frame.resized_size),
                           (10, 10))
         if self.source.zone:
-            text_org = Vertex(self.source.zone.start_x + 4, self.source.zone.end_y - 4)
+            text_org = Vertex(x=self.source.zone.start_x + 4, y=self.source.zone.end_y - 4)
             DrawUtil.put_text(frame, 'Detection Zone', text_org.to_tuple())
             DrawUtil.draw_zone(frame, self.source.zone)
         return frame

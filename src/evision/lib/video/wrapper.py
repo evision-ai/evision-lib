@@ -53,7 +53,8 @@ class ImageSourceWrapperConfig(object):
         if not zone_width or not zone_height:
             self.zone = None
         else:
-            self.zone = Zone(zone_start_x, zone_start_y, zone_width, zone_height)
+            self.zone = Zone(start_x=zone_start_x, start_y=zone_start_y,
+                             width=zone_width, height=zone_height)
 
         self.validate()
 

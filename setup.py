@@ -81,7 +81,7 @@ setup(
             'webargs>=5.5.1',
         ],
         'db': [
-            'peewee>= 3.0.0',
+            'peewee>=3.0.0',
         ],
         'rst': [
             'docutils>=0.11',
@@ -91,6 +91,7 @@ setup(
         ]
     },
     setup_requires=[
+        'pytest',
         'pytest-runner',
     ],
     entry_points={
