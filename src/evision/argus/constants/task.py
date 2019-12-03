@@ -33,6 +33,8 @@ class TaskType(IntEnum):
     MULTI_TARGET_MULTI_CAMERA_TRACKING = 10
     # 活体检测
     LIVENESS_DETECTION = 11
+    # 空
+    DUMMY = -42
 
 
 class GalleryType(IntEnum):
