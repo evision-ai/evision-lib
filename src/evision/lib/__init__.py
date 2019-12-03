@@ -6,4 +6,4 @@
 # @author: Chen Shijiang(chenshijiang@evision.ai)
 # @date: 2019-10-12 09:27
 # @version: 1.0
-__version__ = '0.1.4'
+__version__ = '0.2.0'
