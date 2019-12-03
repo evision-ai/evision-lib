@@ -38,7 +38,7 @@ class BaseArgusAppConfig(BaseModel):
     # 每次处理图像帧数
     frame_batch: int = 1
     # 处理帧率
-    frame_rate: int = 24
+    frame_rate: float = 24
     # 应用备注
     remark: str = None
 
