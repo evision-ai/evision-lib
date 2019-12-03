@@ -12,28 +12,24 @@
 import time
 from typing import List, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
+from evision.argus.constants.task import TaskType
+from evision.argus.video import BaseImageSource, ImageSourceConfig
+from evision.argus.video import ImageSourceReader
+from evision.argus.video import ImageSourceWrapperConfig
 from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
 from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
-from evision.lib.util.types import ValueAsStrIntEnum
-from evision.argus.video import BaseImageSource, ImageSourceConfig
-from evision.argus.video import ImageSourceWrapperConfig
-from evision.argus.video import ImageSourceReader
 
 logger = logutil.get_logger()
 
 
-class App(ValueAsStrIntEnum):
-    dummy = -42
-
-
 class ArgusApplicationConfig(BaseModel):
-    image_source_config: ImageSourceConfig = None
-    source_wrapper_config: ImageSourceWrapperConfig = None
-    app_handler: Union[App, str] = None
+    image_source_config: object = None
+    source_wrapper_config: object = None
+    app_handler: Union[TaskType, str] = None
     frame_batch: int = 1
     fps: float = 24
     name: str = None
@@ -41,7 +37,7 @@ class ArgusApplicationConfig(BaseModel):
     answer_sigint: bool = False
     answer_sigterm: bool = False
 
-    class Config():
+    class Config:
         extra = Extra.allow
         arbitrary_types_allowed = True
 
@@ -99,7 +95,7 @@ ArgusApplication = ArgusApp
 
 
 class DummyApplication(ArgusApp):
-    handler_alias = App.dummy
+    handler_alias = TaskType.DUMMY
 
     def process_frame(self, frames):
         logger.info(f'App[{self.name}] processing frame[{frames.frame_id} @ {time.time()}')

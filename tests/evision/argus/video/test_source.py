@@ -6,7 +6,7 @@
 # @date: 2019-11-01 16:47
 # @version: 1.0
 #
-
+from evision.argus.constants.resource import ImageSourceHandler
 from evision.argus.video import *
 
 

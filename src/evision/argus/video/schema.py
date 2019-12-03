@@ -40,10 +40,10 @@ class ImageSourceConfig(ImageSourceCreateConfig):
 class ImageSourceReaderConfig(ImageSourceConfig):
     source_id: str
     process_rate: int = None
-    zoom: Shape = None
+    zoom_size: Shape = None
     zone: Zone = None
 
-    @validator('zoom')
+    @validator('zoom_size')
     def validate_zoom(cls, v):
         if v is None:
             return None
@@ -57,7 +57,7 @@ class ImageSourceReaderConfig(ImageSourceConfig):
         if v is None:
             return v
         assert isinstance(v, Zone)
-        zoomed_shape = values['zoom'] if 'zoom' in values else None
+        zoomed_shape = values['zoom_size'] if 'zoom_size' in values else None
         if zoomed_shape is None:
             return
         assert isinstance(zoomed_shape, Shape), 'Invalid Shape'

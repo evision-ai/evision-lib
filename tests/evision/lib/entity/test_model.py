@@ -36,7 +36,6 @@ def test_shape():
     assert shape.to_list() == [width, height]
     assert shape.to_tuple() == (width, height)
     assert str(shape) == f'({width}, {height})'
-    Shape(width=1, height=-1)
 
 
 def test_single_vertex():

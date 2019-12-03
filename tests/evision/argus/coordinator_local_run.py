@@ -11,8 +11,9 @@ import logging
 import os
 import time
 
-from evision.argus.app import App, ArgusApplicationConfig
+from evision.argus.app import ArgusApplicationConfig
 from evision.argus.constants.resource import ImageSourceType
+from evision.argus.constants.task import TaskType
 from evision.argus.coordinator import ArgusCoordinator, DictImageSourceCoordinator
 from evision.argus.video import ImageSourceConfig, ImageSourcePreview, ImageSourceWrapperConfig
 from evision.argus.video import VideoCaptureSource, VideoFileImageSource
@@ -66,17 +67,17 @@ def test_coordinator():
         image_source_config=image_source_config,
         source_wrapper_config=__wrapper_config__,
         fps=0.5,
-        name='test-app1', app_handler=App.dummy)
+        name='test-app1', app_handler=TaskType.DUMMY)
     app_config2 = ArgusApplicationConfig(
         image_source_config=image_source_config,
         source_wrapper_config=__wrapper_config__,
         fps=0.2,
-        name='test-app2', app_handler=App.dummy)
+        name='test-app2', app_handler=TaskType.DUMMY)
     app_config3 = ArgusApplicationConfig(
         image_source_config=ip_camera_config,
         source_wrapper_config=__wrapper_config__,
         fps=0.5,
-        name='test-app3', app_handler=App.dummy)
+        name='test-app3', app_handler=TaskType.DUMMY)
     coordinator.add(app_config1)
     coordinator.add(app_config2)
     coordinator.add(app_config3)

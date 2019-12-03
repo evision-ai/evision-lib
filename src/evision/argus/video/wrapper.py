@@ -115,7 +115,7 @@ class ImageSourceReader(object):
         return image_frames[0] if n_frame == 1 else image_frames
 
 
-@DeprecationWarning
+# @DeprecationWarning
 class ImageSourceWrapperConfig(object):
     """ Wrapper configuration of image source
     """

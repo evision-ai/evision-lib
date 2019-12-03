@@ -8,8 +8,7 @@
 # @version: 1.0
 
 from .base import ImageSourceUtil
-from .source import BaseImageSource, VideoCaptureSource, VideoFileImageSource
 from .schema import ImageSourceConfig, ImageSourceReaderConfig
-from .wrapper import ImageSourceWrapper, ImageSourceWrapperConfig, ImageSourceReader
-
+from .source import BaseImageSource, VideoCaptureSource, VideoFileImageSource
+from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper, ImageSourceReader
 from .preview import ImageSourcePreview
