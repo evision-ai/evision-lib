@@ -8,7 +8,8 @@
 # @version: 1.0
 
 from .base import ImageSourceType, ImageSourceUtil
-from .source import BaseImageSource, ImageSourceConfig, ImageSourceHandler, VideoCaptureSource, VideoFileImageSource
+from .source import BaseImageSource, ImageSourceHandler, VideoCaptureSource, VideoFileImageSource
+from evision.argus.video.schema import ImageSourceConfig
 from .wrapper import ImageSourceWrapper, ImageSourceWrapperConfig
 
 from .preview import ImageSourcePreview

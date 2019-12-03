@@ -14,7 +14,6 @@ from typing import Union
 
 import cv2
 import numpy as np
-from pydantic import BaseModel, Extra
 from walrus import Database
 
 from evision.lib.constant import Keys
@@ -24,13 +23,12 @@ from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
 from evision.lib.util.redis import RedisUtil
 from evision.lib.util.types import ValueAsStrIntEnum
-from evision.lib.video import ImageSourceType, ImageSourceUtil
+from evision.argus.video import ImageSourceType, ImageSourceUtil, ImageSourceConfig
 
 logger = logutil.get_logger()
 
 __all__ = [
     'BaseImageSource',
-    'ImageSourceConfig',
     'VideoCaptureSource',
     'VideoFileImageSource',
     'ImageSourceHandler'
@@ -40,23 +38,6 @@ __all__ = [
 class ImageSourceHandler(ValueAsStrIntEnum):
     video_capture = 1
     video_file = 2
-
-
-class ImageSourceConfig(BaseModel):
-    source_uri: Union[str, int]
-    source_type: Union[ImageSourceType, int]
-    handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture
-    source_id: str = None
-    width: int = None
-    height: int = None
-    fps: float = 24
-    frame_queue_size: int = 24
-    name: str = None
-    description: str = None
-
-    class Config:
-        extra = Extra.allow
-        arbitrary_types_allowed = True
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
@@ -69,10 +50,14 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
     @classmethod
     def construct(cls, config: ImageSourceConfig):
+        if config is None:
+            return None
         handler_cls = cls.get_handler_by_name(config.handler_name) \
             if config.handler_name is not None \
             else cls
-        return handler_cls(**config.dict(exclude={'handler_name', }))
+        if config.frame_size is not None:
+            config.width, config.height = config.frame_size.to_tuple()
+        return handler_cls(**config.dict(exclude={'handler_name', 'frame_size'}))
 
     def __init__(self, source_uri: Union[str, int] = None,
                  source_type: Union[ImageSourceType, int] = None,
@@ -245,7 +230,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
 
     @property
     def frames_key(self):
-        return f'frames:{self.source_id}'
+        return ImageSourceUtil.frames_key(self.source_id)
 
     @property
     def frame_shape(self):

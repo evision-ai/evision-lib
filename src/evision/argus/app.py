@@ -19,9 +19,9 @@ from evision.lib.log import logutil
 from evision.lib.mixin import PropertyHandlerMixin
 from evision.lib.parallel import ProcessWrapper
 from evision.lib.util.types import ValueAsStrIntEnum
-from evision.lib.video import BaseImageSource, ImageSourceConfig
-from evision.lib.video import ImageSourceWrapperConfig
-from evision.lib.video.wrapper import ImageSourceReader
+from evision.argus.video import BaseImageSource, ImageSourceConfig
+from evision.argus.video import ImageSourceWrapperConfig
+from evision.argus.video import ImageSourceReader
 
 logger = logutil.get_logger()
 

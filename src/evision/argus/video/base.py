@@ -66,3 +66,8 @@ class ImageSourceUtil(object):
     def random_frame_id(source_id):
         """ 生成随机图像帧ID"""
         return '{}-{:d}'.format(source_id, int(1000 * time.time()))
+
+    @staticmethod
+    def frames_key(source_id):
+        """Redis 图像帧缓存 Key"""
+        return f'frames:{source_id}'

@@ -8,7 +8,7 @@
 # @version: 1.0
 #
 
-from evision.lib.video import ImageSourceType, VideoCaptureSource, VideoFileImageSource
+from evision.argus.video import ImageSourceType, VideoCaptureSource, VideoFileImageSource
 
 width, height = 960, 540
 

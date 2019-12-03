@@ -15,8 +15,10 @@ from walrus import Database
 
 from evision.lib.entity import ImageFrame, Zone
 from evision.lib.log import logutil
+from evision.lib.util import CacheUtil
 from evision.lib.util.redis import RedisNdArrayQueueReader, RedisQueue
-from evision.lib.video import BaseImageSource, ImageSourceUtil
+from evision.argus.video import BaseImageSource, ImageSourceUtil
+from evision.argus.video.schema import ImageSourceReaderConfig
 
 logger = logutil.get_logger()
 
@@ -27,6 +29,93 @@ __all__ = [
 ]
 
 
+class ImageSourceReader(object):
+    width: Union[int, None]
+    height: Union[int, None]
+    zone: Union[Zone, None]
+    _frame_queue: RedisQueue
+    _db: Database()
+
+    def __init__(self, config: ImageSourceReaderConfig):
+        self.source_id = config.source_id
+        self._frame_queue = RedisNdArrayQueueReader(
+            ImageSourceUtil.frames_key(config.source_id),
+            config.fps,
+            frame_shape=(config.frame_size.height, config.frame_size.width, 3),
+            dtype=np.uint8)
+        self._frame_interval = float(1) / config.fps
+        self.source_width, self.source_height = config.frame_size.width, config.frame_size.height
+        self.width, self.height = None, None
+        if config.zoom is not None:
+            self.width = config.zoom.width
+            self.height = config.zoom.height
+        self.zone = config.zone
+        # TODO
+        self.name = CacheUtil.random_id()
+
+    # def from_source(self, image_source: BaseImageSource,
+    #              wrapper_config: ImageSourceWrapperConfig = None):
+    #     assert image_source
+    #     self.source_id = image_source.source_id
+    #
+    #     # logger.info('Waiting for image source[{}] initializing...', image_source.name)
+    #     # while not image_source.running:
+    #     #     with image_source.read_lock:
+    #     #         if not image_source.running and not image_source.is_alive():
+    #     #             image_source.daemon = True
+    #     #             image_source.start()
+    #     #     time.sleep(1)
+    #
+    #     self._frame_queue = RedisNdArrayQueueReader(
+    #         image_source.frames_key, image_source.fps,
+    #         frame_shape=image_source.frame_shape, dtype=np.uint8)
+    #     self._frame_interval = image_source.interval
+    #     self.source_width, self.source_height = image_source.frame_size
+    #
+    #     self.name = image_source.alias
+    #     logger.info('Image source reader for source={} initialized.', image_source.name)
+    #
+    #     if wrapper_config:
+    #         self.__dict__.update(wrapper_config.__dict__)
+
+    @property
+    def zoom_ratio(self):
+        """更新视频源图像帧的缩放比"""
+        if self.width and self.source_width:
+            return float(self.width) / self.source_width
+        if self.height and self.source_height:
+            return float(self.height) / self.source_height
+        return 1.0
+
+    @zoom_ratio.setter
+    def zoom_ratio(self, zoom_ratio):
+        self.width = zoom_ratio * self.source_width
+        self.height = zoom_ratio * self.source_height
+
+    def provide(self, n_frame=1, block=True, timeout=1):
+        frames = None
+        if block:
+            frames = self._frame_queue.get(n_frame)
+        else:
+            must_end = time.time() + timeout
+            while time.time() < must_end:
+                queue_size, frames = self._frame_queue.lrange(n_frame)
+                if queue_size < n_frame:
+                    time.sleep(self._frame_interval * (n_frame - queue_size))
+
+        if not frames:
+            return None
+
+        image_frames = [
+            ImageFrame(self.source_id,
+                       ImageSourceUtil.random_frame_id(self.source_id),
+                       frame, self.zoom_ratio, self.zone)
+            for frame in frames
+        ]
+        return image_frames[0] if n_frame == 1 else image_frames
+
+
+@DeprecationWarning
 class ImageSourceWrapperConfig(object):
     """ Wrapper configuration of image source
     """
@@ -106,75 +195,6 @@ class ImageSourceWrapperConfig(object):
 
     def __getattr__(self, item):
         return getattr(self.zone, item)
-
-
-class ImageSourceReader(object):
-    width: Union[int, None]
-    height: Union[int, None]
-    zone: Union[Zone, None]
-    _frame_queue: RedisQueue
-    _db: Database()
-
-    def __init__(self, image_source: BaseImageSource,
-                 wrapper_config: ImageSourceWrapperConfig = None):
-        assert image_source
-        self.source_id = image_source.source_id
-
-        logger.info('Waiting for image source[{}] initializing...', image_source.name)
-        while not image_source.running:
-            with image_source.read_lock:
-                if not image_source.running and not image_source.is_alive():
-                    image_source.daemon = True
-                    image_source.start()
-            time.sleep(1)
-
-        self._frame_queue = RedisNdArrayQueueReader(
-            image_source.frames_key, image_source.fps,
-            frame_shape=image_source.frame_shape, dtype=np.uint8)
-        self._frame_interval = image_source.interval
-        self.source_width, self.source_height = image_source.frame_size
-
-        self.name = image_source.alias
-        logger.info('Image source reader for source={} initialized.', image_source.name)
-
-        if wrapper_config:
-            self.__dict__.update(wrapper_config.__dict__)
-
-    @property
-    def zoom_ratio(self):
-        """更新视频源图像帧的缩放比"""
-        if self.width and self.source_width:
-            return float(self.width) / self.source_width
-        if self.height and self.source_height:
-            return float(self.height) / self.source_height
-        return 1.0
-
-    @zoom_ratio.setter
-    def zoom_ratio(self, zoom_ratio):
-        self.width = zoom_ratio * self.source_width
-        self.height = zoom_ratio * self.source_height
-
-    def provide(self, n_frame=1, block=True, timeout=1):
-        frames = None
-        if block:
-            frames = self._frame_queue.get(n_frame)
-        else:
-            must_end = time.time() + timeout
-            while time.time() < must_end:
-                queue_size, frames = self._frame_queue.lrange(n_frame)
-                if queue_size < n_frame:
-                    time.sleep(self._frame_interval * (n_frame - queue_size))
-
-        if not frames:
-            return None
-
-        image_frames = [
-            ImageFrame(self.source_id,
-                       ImageSourceUtil.random_frame_id(self.source_id),
-                       frame, self.zoom_ratio, self.zone)
-            for frame in frames
-        ]
-        return image_frames[0] if n_frame == 1 else image_frames
 
 
 @DeprecationWarning

@@ -28,6 +28,16 @@ class Shape(BaseModel):
     width: int
     height: int
 
+    @classmethod
+    def parse(cls, value):
+        if value is None:
+            return None
+        elif isinstance(value, Shape):
+            return value
+        elif isinstance(value, collections.abc.Sequence):
+            return Shape(width=value[0], height=value[1])
+        return None
+
     @validator('width', 'height')
     def ensure_positive(cls, v):
         assert v > 0, 'Value should be positive'

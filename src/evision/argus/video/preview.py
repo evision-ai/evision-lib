@@ -14,8 +14,8 @@ import cv2
 
 from evision.lib.entity import ImageFrame, Vertex
 from evision.lib.util import DrawUtil
-from evision.lib.video import BaseImageSource, ImageSourceWrapper
-from evision.lib.video.wrapper import ImageSourceReader
+from evision.argus.video import BaseImageSource, ImageSourceWrapper
+from evision.argus.video import ImageSourceReader
 
 __all__ = [
     'ImageSourcePreview'

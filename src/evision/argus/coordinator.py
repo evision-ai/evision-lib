@@ -16,9 +16,9 @@ from evision.argus.app import ArgusApp, ArgusApplication, ArgusApplicationConfig
 from evision.lib.log import logutil
 from evision.lib.parallel import ProcessWrapper
 from evision.lib.util import DictUtil
-from evision.lib.video import BaseImageSource, ImageSourceConfig
-from evision.lib.video import ImageSourceType, ImageSourceUtil
-from evision.lib.video.wrapper import ImageSourceReader
+from evision.argus.video import BaseImageSource, ImageSourceConfig
+from evision.argus.video import ImageSourceType, ImageSourceUtil
+from evision.argus.video import ImageSourceReader
 
 logger = logutil.get_logger()
 

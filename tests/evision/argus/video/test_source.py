@@ -7,7 +7,7 @@
 # @version: 1.0
 #
 
-from evision.lib.video import *
+from evision.argus.video import *
 
 
 def test_image_source_handler_names():
