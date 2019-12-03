@@ -16,13 +16,13 @@ import cv2
 import numpy as np
 from walrus import Database
 
+from evision.argus.constants.resource import ImageSourceHandler
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
 from evision.lib.util.redis import RedisUtil
-from evision.lib.util.types import ValueAsStrIntEnum
 from evision.argus.video import ImageSourceType, ImageSourceUtil, ImageSourceConfig
 
 logger = logutil.get_logger()
@@ -30,14 +30,8 @@ logger = logutil.get_logger()
 __all__ = [
     'BaseImageSource',
     'VideoCaptureSource',
-    'VideoFileImageSource',
-    'ImageSourceHandler'
+    'VideoFileImageSource'
 ]
-
-
-class ImageSourceHandler(ValueAsStrIntEnum):
-    video_capture = 1
-    video_file = 2
 
 
 class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
@@ -311,7 +305,7 @@ class VideoCaptureSource(BaseImageSource):
     """
     source: cv2.VideoCapture
 
-    handler_alias = ImageSourceHandler.video_capture
+    handler_alias = ImageSourceHandler.VIDEO_CAPTURE
 
     @staticmethod
     def validate_source(source_uri, source_type, release=True):
@@ -390,7 +384,7 @@ class VideoCaptureSource(BaseImageSource):
 
 
 class VideoFileImageSource(VideoCaptureSource):
-    handler_alias = ImageSourceHandler.video_file
+    handler_alias = ImageSourceHandler.VIDEO_FILE
 
     def __init__(self, **kwargs):
         self.endless = kwargs.pop('endless') if 'endless' in kwargs else False

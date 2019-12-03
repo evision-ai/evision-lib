@@ -12,14 +12,15 @@ from typing import Union
 from pydantic import BaseModel, Extra, validator
 
 from evision.lib.entity import Shape, Zone
-from evision.argus.video import ImageSourceType, ImageSourceHandler, ImageSourceUtil
+from evision.argus.video import ImageSourceType, ImageSourceUtil
+from evision.argus.constants.resource import ImageSourceHandler
 
 
 class ImageSourceConfig(BaseModel):
     source_id: str = None
     source_uri: Union[str, int]
     source_type: Union[ImageSourceType, int]
-    handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.video_capture
+    handler_name: Union[ImageSourceHandler, str] = ImageSourceHandler.VIDEO_CAPTURE
     frame_size: Shape = None
     width: int = None  # deprecated
     height: int = None  # deprecated

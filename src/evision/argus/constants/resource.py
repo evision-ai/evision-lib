@@ -9,6 +9,8 @@
 #
 from enum import IntEnum
 
+from evision.lib.util.types import ValueAsStrIntEnum
+
 
 class DeviceType(IntEnum):
     # 图像源
@@ -34,3 +36,10 @@ class ImageSourceType(IntEnum):
     IMAGE_LINK = 5
     # 图片文件
     IMAGE_FILE = 6
+
+
+class ImageSourceHandler(ValueAsStrIntEnum):
+    # 使用 cv2.VideoCapture 处理图像源
+    VIDEO_CAPTURE = 1
+    # 使用 cv2.VideoCapture 处理图像源，并支持视频文件自动重载
+    VIDEO_FILE = 2
