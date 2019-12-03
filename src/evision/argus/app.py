@@ -12,12 +12,11 @@
 import time
 from typing import List, Union
 
-from pydantic import Extra, BaseModel
+from pydantic import BaseModel, Extra
 
 from evision.argus.constants.task import TaskType
-from evision.argus.video import BaseImageSource, ImageSourceConfig
-from evision.argus.video import ImageSourceReader
-from evision.argus.video import ImageSourceWrapperConfig
+from evision.argus.video import BaseImageSource, ImageSourceWrapper
+from evision.argus.video import ImageSourceConfig, ImageSourceWrapperConfig
 from evision.lib.entity import ImageFrame
 from evision.lib.log import logutil
 from evision.lib.mixin import PropertyHandlerMixin
@@ -27,8 +26,8 @@ logger = logutil.get_logger()
 
 
 class ArgusApplicationConfig(BaseModel):
-    image_source_config: object = None
-    source_wrapper_config: object = None
+    image_source_config: ImageSourceConfig = None
+    source_wrapper_config: ImageSourceWrapperConfig = None
     app_handler: Union[TaskType, str] = None
     frame_batch: int = 1
     fps: float = 24
@@ -43,7 +42,7 @@ class ArgusApplicationConfig(BaseModel):
 
 
 class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
-    source: ImageSourceReader
+    source: ImageSourceWrapper
     frame_batch: int
 
     # 是否必须配置数据源，在启动应用时检查
@@ -52,16 +51,16 @@ class ArgusApp(ProcessWrapper, PropertyHandlerMixin):
     @classmethod
     def construct(cls, config: ArgusApplicationConfig,
                   source: BaseImageSource = None,
-                  wrapper: ImageSourceReader = None):
+                  wrapper: ImageSourceWrapper = None):
         if not source and not wrapper:
             raise ValueError('Image source not configured for argus application')
         if not wrapper:
-            wrapper = ImageSourceReader(source, config.source_wrapper_config)
+            wrapper = ImageSourceWrapper(source, config.source_wrapper_config)
         app_class = cls.get_handler_by_name(config.app_handler) if config.app_handler is not None else cls
         return app_class(wrapper,
                          **config.dict(exclude={'image_source_config', 'source_wrapper_config', 'app_handler'}))
 
-    def __init__(self, source_wrapper: ImageSourceReader,
+    def __init__(self, source_wrapper: ImageSourceWrapper,
                  frame_batch: int = 1, fps: float = 24,
                  name: str = None, paths: Union[str, list, None] = None,
                  answer_sigint: bool = False, answer_sigterm: bool = False, *args, **kwargs):

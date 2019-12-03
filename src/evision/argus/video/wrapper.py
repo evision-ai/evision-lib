@@ -89,9 +89,8 @@ class ImageSourceReader(object):
         return image_frames[0] if n_frame == 1 else image_frames
 
 
-# @DeprecationWarning
 class ImageSourceWrapperConfig(object):
-    """ Wrapper configuration of image source
+    """ #deprecated Wrapper configuration of image source
     """
     width: int
     height: int
@@ -171,8 +170,8 @@ class ImageSourceWrapperConfig(object):
         return getattr(self.zone, item)
 
 
-@DeprecationWarning
 class ImageSourceWrapper(object):
+    """#deprecated"""
     _image_source: BaseImageSource
 
     width: Union[int, None]

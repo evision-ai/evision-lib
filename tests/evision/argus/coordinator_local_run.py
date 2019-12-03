@@ -12,7 +12,7 @@ import os
 import time
 
 from evision.argus.app import ArgusApplicationConfig
-from evision.argus.constants.resource import ImageSourceType
+from evision.argus.constants.resource import ImageSourceType, ImageSourceHandler
 from evision.argus.constants.task import TaskType
 from evision.argus.coordinator import ArgusCoordinator, DictImageSourceCoordinator
 from evision.argus.video import ImageSourceConfig, ImageSourcePreview, ImageSourceWrapperConfig
@@ -29,13 +29,13 @@ __wrapper_config__ = ImageSourceWrapperConfig(
 __local_video__ = os.path.expanduser('~/Downloads/test.avi')
 image_source_config = ImageSourceConfig(
     source_uri=__local_video__, source_type=ImageSourceType.VIDEO_FILE,
-    handler_name='VIDEO_FILE', endless=True)
+    handler_name=ImageSourceHandler.VIDEO_FILE, endless=True)
 
 __ip_camera__ = 'rtsp://admin:1111aaaa@192.100.1.189:554/h264/ch1/main/av_stream'
 ip_camera_config = ImageSourceConfig(
     # source_uri=__ip_camera__, source_type=ImageSourceType.IP_CAMERA,
     source_uri=0, source_type=ImageSourceType.USB_CAMERA,
-    handler_name='VIDEO_CAPTURE'
+    handler_name=ImageSourceHandler.VIDEO_CAPTURE
 )
 
 source_coordinator = DictImageSourceCoordinator()
