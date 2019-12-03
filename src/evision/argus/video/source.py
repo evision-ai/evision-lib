@@ -16,14 +16,14 @@ import cv2
 import numpy as np
 from walrus import Database
 
-from evision.argus.constants.resource import ImageSourceHandler
+from evision.argus.constants.resource import ImageSourceHandler, ImageSourceType
+from evision.argus.video import ImageSourceConfig, ImageSourceUtil
 from evision.lib.constant import Keys
 from evision.lib.log import logutil
 from evision.lib.mixin import FailureCountMixin, PropertyHandlerMixin
 from evision.lib.parallel import ThreadWrapper
 from evision.lib.util import CacheUtil
 from evision.lib.util.redis import RedisUtil
-from evision.argus.video import ImageSourceType, ImageSourceUtil, ImageSourceConfig
 
 logger = logutil.get_logger()
 

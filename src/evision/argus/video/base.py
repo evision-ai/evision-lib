@@ -8,32 +8,14 @@
 # @version: 1.0
 import time
 
+from evision.argus.constants.resource import ImageSourceType
 from evision.lib.log import logutil
-from evision.lib.util.types import ValueAsStrIntEnum
 
 logger = logutil.get_logger()
 
 __all__ = [
-    'ImageSourceType',
     'ImageSourceUtil'
 ]
-
-
-class ImageSourceType(ValueAsStrIntEnum):
-    """ Identify video source type
-    """
-    # 网络摄像头
-    IP_CAMERA = 1
-    # USB 摄像头
-    USB_CAMERA = 2
-    # 视频文件
-    VIDEO_FILE = 3
-    # 视频链接
-    VIDEO_LINK = 4
-    # 图片链接
-    IMAGE_LINK = 5
-    # 图片文件
-    IMAGE_FILE = 6
 
 
 class ImageSourceUtil(object):

@@ -12,9 +12,10 @@ import os
 import time
 
 from evision.argus.app import ArgusApplicationConfig, DummyApplication
+from evision.argus.constants.resource import ImageSourceType
+from evision.argus.video import ImageSourceWrapperConfig
+from evision.argus.video import VideoFileImageSource
 from evision.lib.log import logutil
-from evision.lib.video import ImageSourceType, ImageSourceWrapperConfig
-from evision.lib.video.source import VideoFileImageSource
 
 logger = logutil.get_logger()
 logger.setLevel(logging.DEBUG)

@@ -9,13 +9,13 @@
 import logging
 import time
 
+from evision.argus.constants.resource import ImageSourceHandler, ImageSourceType
+from evision.argus.video import BaseImageSource
+from evision.argus.video import ImageSourceConfig, ImageSourcePreview
+from evision.argus.video import ImageSourceReader
+from evision.argus.video import ImageSourceReaderConfig
 from evision.lib.entity import Shape
 from evision.lib.log import logutil
-from evision.argus.video import ImageSourcePreview, ImageSourceType, ImageSourceConfig
-from evision.argus.video import BaseImageSource
-from evision.argus.constants.resource import ImageSourceHandler
-from evision.argus.video import ImageSourceReader
-from evision.argus.video.schema import ImageSourceReaderConfig
 
 width, height = 960, 540
 

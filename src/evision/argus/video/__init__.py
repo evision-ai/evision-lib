@@ -7,10 +7,9 @@
 # @date: 2019-10-12 15:44
 # @version: 1.0
 
-from .base import ImageSourceType, ImageSourceUtil
+from .base import ImageSourceUtil
 from .source import BaseImageSource, VideoCaptureSource, VideoFileImageSource
-from evision.argus.constants.resource import ImageSourceHandler
-from evision.argus.video.schema import ImageSourceConfig
-from .wrapper import ImageSourceWrapper, ImageSourceWrapperConfig
+from .schema import ImageSourceConfig, ImageSourceReaderConfig
+from .wrapper import ImageSourceWrapper, ImageSourceWrapperConfig, ImageSourceReader
 
 from .preview import ImageSourcePreview
