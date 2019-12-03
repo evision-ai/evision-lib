@@ -80,7 +80,6 @@ class RedisNdArrayQueue(RedisQueue):
         if frame_shape is not None:
             if None in frame_shape:
                 raise ValueError(f'Invalid frame shape: {frame_shape}')
-            print(frame_shape)
             self.frame_shape = tuple(int(_) for _ in frame_shape)
             self.dtype = dtype
 

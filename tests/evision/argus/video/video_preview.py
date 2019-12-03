@@ -17,7 +17,7 @@ from evision.argus.video import ImageSourceReaderConfig
 from evision.lib.entity import Shape
 from evision.lib.log import logutil
 
-width, height = 960, 540
+width, height = 480, 270
 
 logger = logutil.get_logger()
 logger.setLevel(logging.DEBUG)
@@ -35,7 +35,7 @@ def _open_image_source(source_config: ImageSourceConfig):
     source_config.source_id = source.source_id
     source_config.frame_size = Shape.parse(source.frame_size)
     wrapper_config = ImageSourceReaderConfig(
-        **source_config.dict(), zoom=Shape(width=960, height=540))
+        **source_config.dict(), zoom_size=Shape(width=width, height=height))
     wrapper = ImageSourceReader(wrapper_config)
 
     preview = ImageSourcePreview(wrapper)
@@ -70,5 +70,6 @@ def with_video_file():
 
 if __name__ == '__main__':
     # with_ip_camera()
+    # with_usb_camera()
     with_video_file()
     pass

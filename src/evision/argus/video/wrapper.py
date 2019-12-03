@@ -13,12 +13,12 @@ from typing import Union
 import numpy as np
 from walrus import Database
 
+from evision.argus.video import BaseImageSource, ImageSourceUtil
+from evision.argus.video.schema import ImageSourceReaderConfig
 from evision.lib.entity import ImageFrame, Zone
 from evision.lib.log import logutil
 from evision.lib.util import CacheUtil
 from evision.lib.util.redis import RedisNdArrayQueueReader, RedisQueue
-from evision.argus.video import BaseImageSource, ImageSourceUtil
-from evision.argus.video.schema import ImageSourceReaderConfig
 
 logger = logutil.get_logger()
 
@@ -43,40 +43,14 @@ class ImageSourceReader(object):
             config.fps,
             frame_shape=(config.frame_size.height, config.frame_size.width, 3),
             dtype=np.uint8)
-        self._frame_interval = float(1) / config.fps
-        self.source_width, self.source_height = config.frame_size.width, config.frame_size.height
+        self.source_width, self.source_height = config.frame_size.to_tuple()
         self.width, self.height = None, None
-        if config.zoom is not None:
-            self.width = config.zoom.width
-            self.height = config.zoom.height
+        if config.zoom_size is not None:
+            self.width, self.height = config.zoom_size.to_tuple()
         self.zone = config.zone
-        # TODO
-        self.name = CacheUtil.random_id()
-
-    # def from_source(self, image_source: BaseImageSource,
-    #              wrapper_config: ImageSourceWrapperConfig = None):
-    #     assert image_source
-    #     self.source_id = image_source.source_id
-    #
-    #     # logger.info('Waiting for image source[{}] initializing...', image_source.name)
-    #     # while not image_source.running:
-    #     #     with image_source.read_lock:
-    #     #         if not image_source.running and not image_source.is_alive():
-    #     #             image_source.daemon = True
-    #     #             image_source.start()
-    #     #     time.sleep(1)
-    #
-    #     self._frame_queue = RedisNdArrayQueueReader(
-    #         image_source.frames_key, image_source.fps,
-    #         frame_shape=image_source.frame_shape, dtype=np.uint8)
-    #     self._frame_interval = image_source.interval
-    #     self.source_width, self.source_height = image_source.frame_size
-    #
-    #     self.name = image_source.alias
-    #     logger.info('Image source reader for source={} initialized.', image_source.name)
-    #
-    #     if wrapper_config:
-    #         self.__dict__.update(wrapper_config.__dict__)
+        self.process_rate = config.process_rate if config.process_rate else config.fps
+        self._frame_interval = float(1) / self.process_rate
+        self.name = config.name if config.name else CacheUtil.random_id()
 
     @property
     def zoom_ratio(self):
