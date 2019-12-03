@@ -59,6 +59,12 @@ class BaseArgusAppConfig(BaseModel):
         return v
 
 
+class ArgusAppConfig(BaseArgusAppConfig):
+    app_id: str
+    app_type: TaskType
+    name: str
+
+
 class BaseArgusApp(ProcessWrapper, PropertyHandlerMixin):
     # 是否必须配置数据源，在启动应用时检查
     REQUIRE_IMAGE_SOURCE = True
@@ -69,10 +75,10 @@ class BaseArgusApp(ProcessWrapper, PropertyHandlerMixin):
         assert issubclass(app_class, BaseArgusApp)
         return app_class(config, *args, **kwargs)
 
-    @classmethod
-    def parse_sources(cls, source_ids: List[str], source_configs: Dict[str, ImageSourceReaderConfig]):
-        return [ImageSourceReader(source_configs[source_id])
-                for source_id in source_ids]
+    @staticmethod
+    def get_source_configs(source_ids: List[str],
+                           source_configs: Dict[str, ImageSourceReaderConfig]):
+        return [source_configs[source_id] for source_id in source_ids]
 
     def __init__(self, config: BaseArgusAppConfig,
                  paths: Union[str, list, None] = None,
@@ -80,8 +86,9 @@ class BaseArgusApp(ProcessWrapper, PropertyHandlerMixin):
                  *args, **kwargs):
         self._app_config = config
         self.interval = 1.0 / config.frame_rate if config.frame_rate else None
-        self.sources = BaseArgusApp.parse_sources(
+        self.source_configs = BaseArgusApp.get_source_configs(
             config.source_ids, config.source_wrapper_config)
+        self.sources = [ImageSourceReader(config) for config in self.source_configs]
         super().__init__(config.app_name, paths, answer_sigint, answer_sigterm,
                          interval=self.interval, *args, **kwargs)
 

@@ -17,10 +17,22 @@ from evision.lib.entity import Shape, Zone
 
 
 class ImageSourceCreateConfig(BaseModel):
+    source_type: ImageSourceType = ImageSourceType.IP_CAMERA
     source_uri: Union[str, int]
-    source_type: Union[ImageSourceType, int]
     name: str = None
     description: str = None
+
+    @validator('source_uri')
+    def ensure_usb_camera_type(cls, v, values):
+        if 'source_type' in values \
+            and ImageSourceType.USB_CAMERA == values['source_type']:
+            if not isinstance(v, int):
+                return int(v)
+        return v
+
+    @property
+    def source_key(self):
+        return self.source_uri, self.source_type
 
 
 class ImageSourceConfig(ImageSourceCreateConfig):
