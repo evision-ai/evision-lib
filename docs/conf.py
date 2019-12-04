@@ -26,7 +26,7 @@ project = 'evision-lib'
 year = '2018-2019'
 author = 'eVision Python Library'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.2.0'
+version = release = '0.2.1'
 
 pygments_style = 'trac'
 templates_path = ['.']
