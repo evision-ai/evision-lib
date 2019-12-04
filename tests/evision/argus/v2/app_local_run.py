@@ -53,8 +53,8 @@ def test_app_config():
     app_config = BaseArgusAppConfig(
         frame_rate=1,
         app_name='test-dummy-app',
-        source_ids=['usb'],
-        group_ids=['random'],
+        source_ids={'usb'},
+        group_ids={'random'},
         source_wrapper_config=source_wrapper_config,
     )
     app = DummyApp.construct(app_config)
@@ -66,14 +66,14 @@ def test_app_config():
 def test_multiple_apps():
     app_config1 = BaseArgusAppConfig(
         app_name='test-app1',
-        source_ids=[_test_source_id, ],
-        group_ids=['random'],
+        source_ids={_test_source_id, },
+        group_ids={'random'},
         source_wrapper_config=source_wrapper_config
     )
     app_config2 = BaseArgusAppConfig(
         app_name='test-app2',
-        source_ids=[_test_source_id, ],
-        group_ids=['random'],
+        source_ids={_test_source_id, },
+        group_ids={'random'},
         source_wrapper_config=source_wrapper_config
     )
     app1 = DummyApp.construct(app_config1)

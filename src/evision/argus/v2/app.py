@@ -9,7 +9,7 @@
 #
 
 import time
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 from pydantic import BaseModel, Extra, validator
 
@@ -32,9 +32,9 @@ class BaseArgusAppConfig(BaseModel):
     # 应用关联视频源封装
     source_wrapper_config: Dict[str, ImageSourceReaderConfig]
     # 应用关联视频源 ID 列表
-    source_ids: List[str]
+    source_ids: Set[str]
     # 应用关联群组列表
-    group_ids: List[str]
+    group_ids: Set[str]
     # 每次处理图像帧数
     frame_batch: int = 1
     # 处理帧率
@@ -76,7 +76,7 @@ class BaseArgusApp(ProcessWrapper, PropertyHandlerMixin):
         return app_class(config, *args, **kwargs)
 
     @staticmethod
-    def get_source_configs(source_ids: List[str],
+    def get_source_configs(source_ids: Set[str],
                            source_configs: Dict[str, ImageSourceReaderConfig]):
         return [source_configs[source_id] for source_id in source_ids]
 

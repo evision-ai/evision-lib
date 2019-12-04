@@ -84,11 +84,11 @@ def test_ip_camera_registering():
 def test_coordinator():
     app_config1 = BaseArgusAppConfig(
         app_name='test-app1', frame_rate=0.5,
-        source_ids=[_test_source_id, ], group_ids=['random'],
+        source_ids={_test_source_id, }, group_ids={'random'},
         source_wrapper_config=source_wrapper_config)
     app_config2 = BaseArgusAppConfig(
         app_name='test-app2', frame_rate=0.2,
-        source_ids=[_test_source_id, ], group_ids=['random'],
+        source_ids={_test_source_id, }, group_ids={'random'},
         source_wrapper_config=source_wrapper_config)
     coordinator.add(app_config1)
     coordinator.add(app_config2)
@@ -97,7 +97,7 @@ def test_coordinator():
     assert 2 == coordinator.n_apps, f'incorrect number of apps: {coordinator.n_apps}'
     app_config3 = BaseArgusAppConfig(
         app_name='test-app3', frame_rate=0.5,
-        source_ids=['usb', ], group_ids=['random'],
+        source_ids={'usb'}, group_ids={'random'},
         source_wrapper_config=source_wrapper_config)
     coordinator.add(app_config3)
     assert 2 == coordinator.n_image_sources
