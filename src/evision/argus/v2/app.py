@@ -52,8 +52,8 @@ class BaseArgusAppConfig(BaseModel):
             raise ValueError('No image sources provided')
         assert 'source_wrapper_config' in values, \
             f'No image source configuration provided for source_ids={v}'
-        assert isinstance(v, list)
-        source_ids_unconfigured = set(v) - set(values['source_wrapper_config'].keys())
+        assert isinstance(v, set)
+        source_ids_unconfigured = v - set(values['source_wrapper_config'].keys())
         assert not source_ids_unconfigured, \
             f'Image source unconfigured: {source_ids_unconfigured}'
         return v
