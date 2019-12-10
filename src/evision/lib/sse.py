@@ -10,6 +10,7 @@ class Publisher(object):
     different channel.
     """
     END_STREAM = {}
+    ALL_CHANNELS = '__ALL_CHANNELS__'
 
     def __init__(self):
         """
@@ -19,7 +20,11 @@ class Publisher(object):
 
     def _get_subscribers_lists(self, channel):
         if isinstance(channel, str):
-            yield self.subscribers_by_channel[channel]
+            if channel == Publisher.ALL_CHANNELS:
+                for subscribers_list in self.subscribers_by_channel.values():
+                    yield subscribers_list
+            else:
+                yield self.subscribers_by_channel[channel]
         else:
             for channel_name in channel:
                 yield self.subscribers_by_channel[channel_name]
@@ -35,7 +40,8 @@ class Publisher(object):
         for subscriber_list in self._get_subscribers_lists(channel):
             yield from subscriber_list
 
-    def _publish_single(self, data, queue):
+    @staticmethod
+    def _publish_single(data, queue):
         """
         Publishes a single piece of data to a single user. Data is encoded as
         required.
@@ -69,7 +75,13 @@ class Publisher(object):
             for queue, _ in self.get_subscribers(channel):
                 self._publish_single(data, queue)
 
-    def subscribe(self, channel='default channel', properties=None, initial_data=[]):
+    def subscribe_all(self, properties=None, initial_data=None):
+        """
+        Subscribes to all channels, returning an infinite generator of Server-Sent-Events
+        """
+        return self.subscribe(Publisher.ALL_CHANNELS, properties, initial_data)
+
+    def subscribe(self, channel='default channel', properties=None, initial_data=None):
         """
         Subscribes to the channel, returning an infinite generator of
         Server-Sent-Events.
@@ -88,15 +100,17 @@ class Publisher(object):
         properties = properties or {}
         subscriber = (queue, properties)
 
-        for data in initial_data:
-            self._publish_single(data, queue)
+        if initial_data is not None:
+            for data in initial_data:
+                self._publish_single(data, queue)
 
         for subscribers_list in self._get_subscribers_lists(channel):
             subscribers_list.append(subscriber)
 
         return self._make_generator(queue)
 
-    def _make_generator(self, queue):
+    @staticmethod
+    def _make_generator(queue):
         """
         Returns a generator that reads data from the queue, emitting data
         events, while the Publisher.END_STREAM value is not received.
