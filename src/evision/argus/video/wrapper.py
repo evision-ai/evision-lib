@@ -8,7 +8,7 @@
 # @version: 1.0
 #
 import time
-from typing import Union
+from typing import Union, Set
 
 import numpy as np
 from walrus import Database
@@ -28,6 +28,7 @@ __all__ = [
     'ImageSourceReader'
 ]
 
+FrameDataType = str
 
 class ImageSourceReader(object):
     width: Union[int, None]
@@ -35,14 +36,11 @@ class ImageSourceReader(object):
     zone: Union[Zone, None]
     _frame_queue: RedisQueue
     _db: Database()
+    _last_frames: Set[FrameDataType]
 
     def __init__(self, config: ImageSourceReaderConfig):
         self.source_id = config.source_id
-        self._frame_queue = RedisNdArrayQueueReader(
-            ImageSourceUtil.frames_key(config.source_id),
-            config.fps,
-            frame_shape=(config.frame_size.height, config.frame_size.width, 3),
-            dtype=np.uint8)
+        self._frame_queue = RedisQueue(ImageSourceUtil.frames_key(config.source_id))
         self.source_width, self.source_height = config.frame_size.to_tuple()
         self.width, self.height = None, None
         if config.zoom_size is not None:
@@ -51,6 +49,7 @@ class ImageSourceReader(object):
         self.process_rate = config.process_rate if config.process_rate else config.fps
         self._frame_interval = float(1) / self.process_rate
         self.name = config.name if config.name else CacheUtil.random_id()
+        self._last_frames = set()
 
     @property
     def zoom_ratio(self):
@@ -66,26 +65,36 @@ class ImageSourceReader(object):
         self.width = zoom_ratio * self.source_width
         self.height = zoom_ratio * self.source_height
 
-    def provide(self, n_frame=1, block=True, timeout=1):
-        frames = None
-        if block:
+    def provide(self, n_frame=1, block=True, timeout=1, deduplicate = True
+            ) -> Union[FrameDataType, List[FrameDataType], None]:
+        frames: List[FrameDataType] = None
+        if not block:
             frames = self._frame_queue.get(n_frame)
+            if (not frames) or deduplicate and set.intersection(frames):
+                return None
         else:
-            must_end = time.time() + timeout
-            while time.time() < must_end:
+            start = time.time()
+            must_large_than, must_end = start - 0.05, start + timeout
+            while must_large_than <= time.time() < must_end:
                 queue_size, frames = self._frame_queue.lrange(n_frame)
-                if queue_size < n_frame:
-                    time.sleep(self._frame_interval * (n_frame - queue_size))
-
-        if not frames:
-            return None
+                frames = [
+                    frame for frame in frames
+                    if not (deduplicate and frame in self._last_frames)
+                ] if frames is not None else []
+                if len(frames) < n_frame:
+                    # query for 10 times every second
+                    time.sleep(min(0.1, self._frame_interval / 3) * (n_frame - queue_size))
+            if len(frames) < n_frame:
+                return None
 
         image_frames = [
             ImageFrame(self.source_id,
-                       ImageSourceUtil.random_frame_id(self.source_id),
-                       frame, self.zoom_ratio, self.zone)
+                       frame,
+                       None, self.zoom_ratio, self.zone)
             for frame in frames
         ]
+        if deduplicate:
+            self._last_frames = set(frames)
         return image_frames[0] if n_frame == 1 else image_frames
 
 
