@@ -8,7 +8,7 @@
 # @version: 1.0
 #
 import time
-from typing import Union, Set
+from typing import Union, Set, List
 
 import numpy as np
 from walrus import Database
@@ -35,13 +35,13 @@ class ImageSourceReader(object):
     height: Union[int, None]
     zone: Union[Zone, None]
     _frame_queue: RedisQueue
-    _db: Database()
+    _db: Database
     _last_frames: Set[FrameDataType]
 
     def __init__(self, config: ImageSourceReaderConfig):
         self.source_id = config.source_id
         self._frame_queue = RedisQueue(ImageSourceUtil.frames_key(config.source_id))
-        self._frame_queue.deserialize = str
+        self._frame_queue.deserialize = lambda i: i.decode()
         self._frame_queue.serialize = None
         self.source_width, self.source_height = config.frame_size.to_tuple()
         self.width, self.height = None, None
@@ -49,7 +49,7 @@ class ImageSourceReader(object):
             self.width, self.height = config.zoom_size.to_tuple()
         self.zone = config.zone
         self.process_rate = config.process_rate if config.process_rate else config.fps
-        self._frame_interval = float(1) / self.process_rate
+        self._frame_interval = max(float(1) / self.process_rate, 0.02)
         self.name = config.name if config.name else CacheUtil.random_id()
         self._last_frames = set()
 
@@ -85,7 +85,9 @@ class ImageSourceReader(object):
                 ] if frames is not None else []
                 if len(frames) < n_frame:
                     # query for 10 times every second
-                    time.sleep(min(0.1, self._frame_interval / 3) * (n_frame - queue_size))
+                    time.sleep(min(0.1, self._frame_interval / 3) * (n_frame - len(frames)))
+                else:
+                    break
             if len(frames) < n_frame:
                 return None
 

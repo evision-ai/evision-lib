@@ -24,16 +24,17 @@ logger.setLevel(logging.DEBUG)
 
 
 def _open_image_source(source_config: ImageSourceConfig):
+    source_config.frame_size = Shape(width=width, height=height)
+    source_config.process_rate = 100
     source = BaseImageSource.construct(source_config)
     source.daemon = True
-    source.start()
+    # source.start()
 
-    while not source.running:
+    while not source.running and False:
         logger.debug('Waiting for source initializing...')
         time.sleep(0.5)
 
     source_config.source_id = source.source_id
-    source_config.frame_size = Shape.parse(source.frame_size)
     wrapper_config = ImageSourceReaderConfig(
         **source_config.dict(), zoom_size=Shape(width=width, height=height))
     wrapper = ImageSourceReader(wrapper_config)
@@ -46,7 +47,7 @@ def _open_image_source(source_config: ImageSourceConfig):
 def with_ip_camera():
     source_uri = 'rtsp://admin:1111aaaa@192.100.1.112:554/h264/ch1/main/av_stream'
     source_type = ImageSourceType.IP_CAMERA
-    source_config = ImageSourceConfig(source_uri=source_uri, source_type=source_type,
+    source_config = ImageSourceConfig(source_id="cam1", source_uri="cam1", source_type=source_type,
                                       handler_name=ImageSourceHandler.VIDEO_CAPTURE)
     _open_image_source(source_config)
 
@@ -71,5 +72,5 @@ def with_video_file():
 if __name__ == '__main__':
     # with_ip_camera()
     # with_usb_camera()
-    with_video_file()
+    with_ip_camera()
     pass

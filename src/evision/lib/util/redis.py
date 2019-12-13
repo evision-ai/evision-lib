@@ -7,6 +7,7 @@
 # @date: 2019-11-20 16:30
 # @version: 1.0
 #
+import os
 import pickle
 import time
 from queue import Queue
@@ -19,7 +20,12 @@ from walrus import Database
 class RedisQueue(object):
     def __init__(self, key, queue_size=-1):
         self.queue_size = int(queue_size)
-        self.client = Database()
+        if os.environ.get("REDIS_USE_12", "").lower() in ("1", "true"):
+            import urllib
+            url = urllib.parse.urlparse("redis://192.100.1.12:6379/")
+            self.client = Database(host=url.hostname, port=url.port, password=url.password, db=0)
+        else:
+            self.client = Database()
         self.key = key
         self.queue = self.client.List(key)
 
