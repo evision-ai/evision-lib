@@ -15,7 +15,6 @@ build:
 test:
     stage: test
     script:
-        - pip install pytest pytest-runner pytest-asyncio
         - pytest tests
 
 dist:
