@@ -52,4 +52,4 @@ class ImageSourceUtil(object):
     @staticmethod
     def frames_key(source_id):
         """Redis 图像帧缓存 Key"""
-        return f'frames:{source_id}'
+        return 'V{}:frames'.format(source_id)

@@ -41,6 +41,8 @@ class ImageSourceReader(object):
     def __init__(self, config: ImageSourceReaderConfig):
         self.source_id = config.source_id
         self._frame_queue = RedisQueue(ImageSourceUtil.frames_key(config.source_id))
+        self._frame_queue.deserialize = str
+        self._frame_queue.serialize = None
         self.source_width, self.source_height = config.frame_size.to_tuple()
         self.width, self.height = None, None
         if config.zoom_size is not None:

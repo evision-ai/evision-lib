@@ -89,6 +89,7 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
         self.source_id = source_id if source_id else CacheUtil.random_string(8)
         self.description = description
         self.debug = True if kwargs and kwargs.get('debug') else False
+        self.frames_key = ImageSourceUtil.frames_key(self.source_id)
 
         logger.info('{}[{}] inited, source={}, type={}, frame size={}, fps={}, '
                     'name={}, description={}',
@@ -221,10 +222,6 @@ class BaseImageSource(ThreadWrapper, FailureCountMixin, PropertyHandlerMixin):
             return
         width, height = ImageSourceUtil.check_frame_shape(*value)
         self.width, self.height = width, height
-
-    @property
-    def frames_key(self):
-        return ImageSourceUtil.frames_key(self.source_id)
 
     @property
     def frame_shape(self):
