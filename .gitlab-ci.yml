@@ -1,0 +1,27 @@
+before_script:
+    - export PATH=/home/shijiang/anaconda/bin:$PATH
+    - python -V                                   # Print out python version for debugging
+  
+stages:
+    - build
+    - test
+    - dist
+
+build:
+    stage: build
+    script:
+        - python setup.py build
+
+test:
+    stage: test
+    script:
+        - pytest ./tests
+
+dist:
+    stage: dist
+    script:
+        - which devpi && devpi --version
+        - devpi use http://192.100.1.12:9010/evision/dev/
+        - devpi login $DEVPI_USER --password $DEVPI_PASSWORD
+        - python setup.py build sdist bdist_wheel
+        - devpi upload
