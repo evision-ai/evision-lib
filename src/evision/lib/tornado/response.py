@@ -11,11 +11,9 @@ import logging
 from functools import partial, wraps
 
 import tornado.web
-from tornado import gen, stack_context
+from tornado import gen
 from tornado.log import app_log
-from tornado.stack_context import run_with_stack_context
 
-from evision.lib.context import RequestIdContext
 from evision.lib.log import logutil
 
 logger = logutil.get_logger()
@@ -63,7 +61,6 @@ class ServerException(Exception):
 
 def _stack_context_handle_exception(type, value, traceback, handler):
     app_logger = logging.LoggerAdapter(app_log, extra={
-        "request_id": RequestIdContext.get()
     })
     if isinstance(value, ServerException):
         app_logger.error("%s" % str(value), exc_info=True)
@@ -82,10 +79,6 @@ def handle_exception(method):
     def __wrapper__(*args, **kwargs):
         _stack_context_handle_exception_partial = partial(
             _stack_context_handle_exception, handler=args[0])
-        yield run_with_stack_context(
-            stack_context.ExceptionStackContext(
-                _stack_context_handle_exception_partial, delay_warning=True),
-            lambda: method(*args, **kwargs)
-        )
+        yield method(*args, **kwargs)
 
     return __wrapper__

@@ -9,7 +9,6 @@ from webargs import ValidationError
 from webargs.tornadoparser import HTTPError
 
 from evision.lib.constant import Message, Status
-from evision.lib.context import RequestIdContext, with_request_id
 from evision.lib.log import logutil
 from evision.lib.tornado.response import Response
 
@@ -32,30 +31,6 @@ class BaseHandler(tornado.web.RequestHandler):
     """
     __allow_origins = [
     ]
-
-    @with_request_id
-    async def initialize(self):
-        """
-        make the request id context is available
-
-        :return:
-        """
-        pass
-
-    async def prepare(self):
-        """
-
-        before real handler runs
-
-        1. update request id
-
-        :return:
-        """
-        request_id = self.request.headers.get("X-Request-ID")
-        if request_id:
-            RequestIdContext.set(request_id)
-        else:
-            self.set_header("X-Request-ID", RequestIdContext.get())
 
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin",
