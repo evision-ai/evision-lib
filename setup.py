@@ -22,7 +22,7 @@ def read(*names, **kwargs):
 
 setup(
     name='evision-lib',
-    version='0.2.4',
+    version='0.3.0',
     description='eVision Common Python Library',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
