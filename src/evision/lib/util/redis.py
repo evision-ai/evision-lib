@@ -40,7 +40,7 @@ class RedisQueue(object):
     serialize = pickle.dumps
     deserialize = pickle.loads
 
-    def put(self, frame,
+    def put(self, frame: Union[str, bytes],
             extra_data: List[Tuple[str, Union[bytes, str], int]] = None):
         if self.queue is not None:
             if extra_data:

@@ -38,7 +38,7 @@ class TestRedisQueue(object):
     def test_put(self):
         assert len(self.val_queue) == 0
         obj = dict(a=1, b=2)
-        self.queue.put(obj)
+        self.queue.put(pickle.dumps(obj))
         assert len(self.val_queue) == 1
         val_obj = self.val_queue[0]
         assert val_obj == pickle.dumps(obj)
