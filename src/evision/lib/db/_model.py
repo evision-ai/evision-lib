@@ -62,9 +62,8 @@ class BaseVersionedModel(BaseModel):
         model_class = type(self)
         field_data['version'] = model_class.version + 1  # Atomic increment
 
-        query = model_class.update(**field_data).where(
-            (model_class.version == current_version) &
-            (model_class.id == self.id))
+        query = model_class.update(**field_data) \
+            .where((model_class.version == current_version) & (model_class.id == self.id))
 
         nrows = query.execute()
         if nrows == 0:

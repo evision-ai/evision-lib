@@ -69,7 +69,7 @@ class TestPropertyHandlerMixin(object):
         assert _SubClassC.visible
 
     def handler_name(self):
-        assert _BaseClass.handler_name == None
+        assert _BaseClass.handler_name is None
         assert _SubClassA.handler_name == 'class-a'
         assert _SubClassB.handler_name == 'class-b'
         assert _SubClassC.handler_name == 'class-c'
