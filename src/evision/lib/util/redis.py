@@ -11,32 +11,46 @@ import os
 import pickle
 import time
 from queue import Queue
+from typing import List, Tuple, Union
 
 import numpy as np
 from numpy import ndarray as nda
+from redis import Redis
 from walrus import Database
 
 
 class RedisQueue(object):
-    def __init__(self, key, queue_size=-1):
+    def __init__(self, key: str, queue_size=-1, alive_time=360, redis_client: Redis = None):
         self.queue_size = int(queue_size)
-        if os.environ.get("REDIS_USE_12", "").lower() in ("1", "true"):
-            import urllib
-            url = urllib.parse.urlparse("redis://192.100.1.12:6379/")
-            self.client = Database(host=url.hostname, port=url.port, password=url.password, db=0)
+        if redis_client:
+            self.client = redis_client
+        elif os.getenv('REDIS_URL'):
+            self.client = Database.from_url(os.getenv('REDIS_URL'))
         else:
-            self.client = Database()
+            self.client = Database(
+                host=os.getenv('REDIS_HOST', 'localhost'),
+                port=os.getenv('REDIS_PORT', '6379'),
+                password=os.getenv('REDIS_PASSWORD')
+            )
         self.key = key
-        self.queue = self.client.List(key)
+        # FIXME: @gdh1995 啥意思？
+        self.queue = self.client.List(key) if self.queue_size < 0 else None
+        self.alive_time = alive_time
 
     serialize = pickle.dumps
     deserialize = pickle.loads
 
-    def put(self, frame):
-        if self.queue_size <= 0:
-            self.queue.prepend(self.serialize(frame))
+    def put(self, frame,
+            extra_data: List[Tuple[str, Union[bytes, str], int]] = None):
+        if self.queue is not None:
+            if extra_data:
+                raise NotImplementedError('Don\'t support extra data')
+            self.queue.prepend(frame)
         else:
             pipe = self.client.pipeline()
+            for ex_key, ex_val, ex_expired_time in extra_data:
+                pipe.set(ex_key, ex_val)
+                pipe.expire(ex_key, ex_expired_time)
             pipe.lpush(self.key, self.serialize(frame))
             pipe.ltrim(self.key, 0, self.queue_size)
             pipe.expire(self.key, 86400)
