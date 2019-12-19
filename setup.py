@@ -69,6 +69,7 @@ setup(
     ],
     python_requires='!=2.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=[
+        # 'tornado>=5.0.0',
         'opencv-python',
         'numpy>=1.11.0',
         'fields',
@@ -77,8 +78,8 @@ setup(
     ],
     extras_require={
         'tornado': [
-            'tornado>=5.0.0',
             'webargs>=5.5.1',
+            'tornado>=5.0.0',
         ],
         'db': [
             'peewee>=3.0.0',

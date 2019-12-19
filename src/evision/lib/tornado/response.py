@@ -8,10 +8,8 @@
 # @version: 1.0
 
 import logging
-from functools import partial, wraps
 
 import tornado.web
-from tornado import gen
 from tornado.log import app_log
 
 from evision.lib.log import logutil
@@ -21,7 +19,6 @@ logger = logutil.get_logger()
 __all__ = [
     'Response',
     'ServerException',
-    'handle_exception'
 ]
 
 
@@ -71,14 +68,3 @@ def _stack_context_handle_exception(type, value, traceback, handler):
     # make request finish
     handler.finish()
     return True
-
-
-def handle_exception(method):
-    @wraps(method)
-    @gen.coroutine
-    def __wrapper__(*args, **kwargs):
-        _stack_context_handle_exception_partial = partial(
-            _stack_context_handle_exception, handler=args[0])
-        yield method(*args, **kwargs)
-
-    return __wrapper__

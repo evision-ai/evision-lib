@@ -15,4 +15,10 @@ include pyproject.toml
 
 include tox.ini
 
-global-exclude *.py[cod]
+global-exclude *.py[cod] .DS_Store
+
+include *.yml
+include LICENSE
+recursive-include tests *.ini
+recursive-include tests *.jpg
+recursive-include tests *.py
