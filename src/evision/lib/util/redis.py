@@ -20,7 +20,8 @@ from walrus import Database
 
 
 class RedisQueue(object):
-    def __init__(self, key: str, queue_size=-1, alive_time=360, redis_client: Redis = None):
+    def __init__(self, key: str, queue_size=-1, alive_time=360, redis_client: Redis = None,
+                 need_list_obj: bool = True):
         self.queue_size = int(queue_size)
         if redis_client:
             self.client = redis_client
@@ -29,13 +30,12 @@ class RedisQueue(object):
         else:
             self.client = Database(
                 host=os.getenv('REDIS_HOST', 'localhost'),
-                port=os.getenv('REDIS_PORT', '6379'),
+                port=int(os.getenv('REDIS_PORT', '6379')),
                 password=os.getenv('REDIS_PASSWORD')
             )
         self.key = key
-        # FIXME: @gdh1995 啥意思？
-        self.queue = self.client.List(key) if self.queue_size < 0 else None
         self.alive_time = alive_time
+        self.queue = self.client.List(key) if need_list_obj else None
 
     serialize = pickle.dumps
     deserialize = pickle.loads
@@ -53,14 +53,14 @@ class RedisQueue(object):
                 pipe.expire(ex_key, ex_expired_time)
             pipe.lpush(self.key, self.serialize(frame))
             pipe.ltrim(self.key, 0, self.queue_size)
-            pipe.expire(self.key, 86400)
+            pipe.expire(self.key, self.alive_time)
             pipe.execute()
 
     def empty(self):
-        return self.queue is None or not self.queue
+        return not self.queue
 
     def size(self):
-        return len(self.queue)
+        return len(self.queue) if self.queue is not None else -1
 
     def peek(self):
         pipe = self.client.pipeline()
