@@ -11,4 +11,3 @@ from .base import ImageSourceUtil
 from .schema import ImageSourceConfig, ImageSourceReaderConfig
 from .source import BaseImageSource, VideoCaptureSource, VideoFileImageSource
 from .wrapper import ImageSourceWrapperConfig, ImageSourceWrapper, ImageSourceReader
-from .preview import ImageSourcePreview
