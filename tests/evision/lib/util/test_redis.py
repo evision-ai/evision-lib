@@ -42,7 +42,7 @@ class TestRedisQueue(object):
         self.queue.put(str(obj))
         assert len(self.val_queue) == 1
         val_obj = self.val_queue[0]
-        assert val_obj == str(obj)
+        assert val_obj.decode() == str(obj)
 
     def test_empty(self):
         assert self.queue.empty()
