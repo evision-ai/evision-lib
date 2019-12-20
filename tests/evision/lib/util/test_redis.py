@@ -25,7 +25,7 @@ def remove_key(key):
 class TestRedisQueue(object):
     def setup_class(self):
         remove_key(__test_key__)
-        self.queue = RedisQueue(__test_key__, 10)
+        self.queue = RedisQueue(__test_key__, 10, need_list_obj=True)
         self.val_queue = Database().List(__test_key__)
 
     def teardown_class(self):
@@ -36,12 +36,13 @@ class TestRedisQueue(object):
         remove_key(__test_key__)
 
     def test_put(self):
+        print(self.queue.client)
         assert len(self.val_queue) == 0
         obj = dict(a=1, b=2)
-        self.queue.put(pickle.dumps(obj))
+        self.queue.put(str(obj))
         assert len(self.val_queue) == 1
         val_obj = self.val_queue[0]
-        assert val_obj == pickle.dumps(obj)
+        assert val_obj == str(obj)
 
     def test_empty(self):
         assert self.queue.empty()
