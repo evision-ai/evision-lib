@@ -129,8 +129,9 @@ class ParallelWrapperMixin(object):
                 pass
             except Exception as e:
                 if self.show_error:
-                    logger.error(f'[{self.name}] Failed processing '
-                                 f'{self.__class__}', e)
+                    logger.exception(
+                        f'[{self.name}] Failed processing {self.__class__}', e
+                    )
                 if self.fail_on_error:
                     logger.error('[{}] Failed on error: {}', self.name, e)
                     break
